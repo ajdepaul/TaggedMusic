@@ -56,15 +56,15 @@ class Song internal constructor(
     internal fun toJson(): String {
 
         val jsonData = JsonData(file,
-                            title,
-                            artist,
-                            album,
-                            trackNum,
-                            year,
-                            duration,
-                            dateAdded.toString(),
-                            playCount,
-                            tags)
+                                title,
+                                artist,
+                                album,
+                                trackNum,
+                                year,
+                                duration,
+                                dateAdded.toString(),
+                                playCount,
+                                tags)
 
         return Gson().toJson(jsonData)
     }
