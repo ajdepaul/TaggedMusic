@@ -89,6 +89,19 @@ class Song internal constructor(
         }
     }
 
+    private data class JsonData(val file: String,
+                            val title: String,
+                            val artist: String?,
+                            val album: String?,
+                            val track_num: Int?,
+                            val year: Int?,
+                            val duration: Long,
+                            val date_added: String,
+                            val play_count: Int,
+                            val tags: Set<String>)
+
+    // ---------------- Observers ---------------- //
+
     /** Subject used to send out updates when tags are modified */
     private inner class TagUpdateSubject : Subject<Set<String>> {
 
@@ -109,14 +122,3 @@ class Song internal constructor(
         override fun notifySubjects() { for (o in observers) o.update(null) }
     }
 }
-
-private data class JsonData(val file: String,
-                            val title: String,
-                            val artist: String?,
-                            val album: String?,
-                            val track_num: Int?,
-                            val year: Int?,
-                            val duration: Long,
-                            val date_added: String,
-                            val play_count: Int,
-                            val tags: Set<String>)
