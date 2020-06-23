@@ -1,8 +1,19 @@
 package TaggedMusic
 
-import TaggedMusic.Song
+import kotlin.collections.Collection
 
-object SftpUtil {
+internal object Util {
+
+    fun <E> findAdded(before: Collection<E>, after: Collection<E>): Collection<E> {
+        return after.filter { e -> !before.contains(e) }
+    }
+
+    fun <E> findRemoved(before: Collection<E>, after: Collection<E>): Collection<E> {
+        return before.filter { e -> !after.contains(e) }
+    }
+}
+
+internal object SftpUtil {
 
     fun getSongMetaData(file: String): SongMetaData {
         // TODO implement
@@ -15,17 +26,13 @@ object SftpUtil {
     }
 }
 
-data class SongMetaData(val title:       String? = null,
-                        val artist:      String? = null,
-                        val album:       String? = null,
-                        val trackNum:    Int?    = null,
-                        val year:        Int?    = null,
-                        val duration:      Long)
+internal interface Observer<D> { fun update(dat: D) }
 
-interface Observer<D> { fun update(data: D) }
+internal open class Subject<D> {
 
-interface Subject<D> {
-    fun addObserver(observer: Observer<D>)
-    fun removeObserver(observer: Observer<D>)
-    fun notifySubjects()
+    private var observers = listOf<Observer<D>>()
+
+    fun addObserver(observer: Observer<D>) { observers += observer }
+    fun removeObserver(observer: Observer<D>) { observers -= observer }
+    fun notifySubjects(dat: D) { observers.forEach { o -> o.update(dat) } }
 }

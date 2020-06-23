@@ -4,10 +4,6 @@ import com.google.gson.Gson
 
 import java.time.LocalDateTime
 
-import TaggedMusic.SongMetaData
-import TaggedMusic.Subject
-import TaggedMusic.Observer
-
 class Song internal constructor(
     val file: String,
     metaData: SongMetaData,
@@ -15,33 +11,43 @@ class Song internal constructor(
 ) {
 
     // observers
-    private val tagUpdateSubject = TagUpdateSubject()
-    private val anyUpdateSubject = AnyUpdateSubject()
+    internal val tagUpdateSubject = Subject<TagsBeforeAfter>()
+    internal val anyUpdateSubject = Subject<LocalDateTime>()
 
     // metadata
-    var title: String = if (metaData.title != null) metaData.title else file
-        set(value) { field = value; anyUpdateSubject.notifySubjects() }
+    var title: String = metaData.title ?: file
+        set(value) { field = value; _lastModified = LocalDateTime.now() }
 
     var artist: String? = metaData.artist
-        set(value) { field = value; anyUpdateSubject.notifySubjects() }
+        set(value) { field = value; _lastModified = LocalDateTime.now() }
 
     var album: String? = metaData.album
-        set(value) { field = value; anyUpdateSubject.notifySubjects() }
+        set(value) { field = value; _lastModified = LocalDateTime.now() }
 
     var trackNum: Int? = metaData.trackNum
-        set(value) { field = value; anyUpdateSubject.notifySubjects() }
+        set(value) { field = value; _lastModified = LocalDateTime.now() }
 
     var year: Int? = metaData.year
-        set(value) { field = value; anyUpdateSubject.notifySubjects() }
+        set(value) { field = value; _lastModified = LocalDateTime.now() }
 
     /** Time in milliseconds */
     val duration: Long = metaData.duration
 
     // other
+    private var _lastModified: LocalDateTime = dateAdded
+        set(value) { field = value; anyUpdateSubject.notifySubjects(field) }
+    val lastModified: LocalDateTime get() { return _lastModified }
+
     var playCount: Int = 0
-        set(value) { field = value; anyUpdateSubject.notifySubjects() }
+        set(value) { field = value; _lastModified = LocalDateTime.now() }
+
     var tags = setOf<String>()
-        set(value) { field = value; tagUpdateSubject.notifySubjects(); anyUpdateSubject.notifySubjects() }
+        set(value) {
+            val before = field
+            field = value
+            tagUpdateSubject.notifySubjects(Pair(before, value))
+            _lastModified = LocalDateTime.now()
+        }
 
     // ---------------- Functions ---------------- //
 
@@ -53,23 +59,24 @@ class Song internal constructor(
 
     // ---------------- JSON ---------------- //
 
+    /** Save song as JSON */
     internal fun toJson(): String {
-
-        val jsonData = JsonData(file,
-                                title,
-                                artist,
-                                album,
-                                trackNum,
-                                year,
-                                duration,
-                                dateAdded.toString(),
-                                playCount,
-                                tags)
-
-        return Gson().toJson(jsonData)
+        return Gson().toJson(JsonData(file,
+                                      dateAdded.toString(),
+                                      title,
+                                      artist,
+                                      album,
+                                      trackNum,
+                                      year,
+                                      duration,
+                                      lastModified.toString(),
+                                      playCount,
+                                      tags))
     }
 
     companion object {
+
+        /** Load song from JSON */
         internal fun fromJson(json: String): Song {
 
             val jsonData = Gson().fromJson(json, JsonData::class.java)
@@ -81,44 +88,31 @@ class Song internal constructor(
                                         jsonData.year,
                                         jsonData.duration)
 
-            val song = Song(jsonData.file, metaData, LocalDateTime.parse(jsonData.date_added))
-            song.playCount = jsonData.play_count
-            song.tags = jsonData.tags
-
-            return song
+            return Song(jsonData.file, metaData, LocalDateTime.parse(jsonData.date_added))
+                .apply {
+                    playCount = jsonData.play_count
+                    tags = jsonData.tags
+                    _lastModified = LocalDateTime.parse(jsonData.last_modified)
+                }
         }
     }
 
     private data class JsonData(val file: String,
-                            val title: String,
-                            val artist: String?,
-                            val album: String?,
-                            val track_num: Int?,
-                            val year: Int?,
-                            val duration: Long,
-                            val date_added: String,
-                            val play_count: Int,
-                            val tags: Set<String>)
-
-    // ---------------- Observers ---------------- //
-
-    /** Subject used to send out updates when tags are modified */
-    private inner class TagUpdateSubject : Subject<Set<String>> {
-
-        val observers = mutableListOf<Observer<Set<String>>>()
-
-        override fun addObserver(observer : Observer<Set<String>>) { observers.add(observer) }
-        override fun removeObserver(observer: Observer<Set<String>>) { observers.remove(observer) }
-        override fun notifySubjects() { for (o in observers) o.update(tags) }
-    }
-
-    /** Subject used to send out updates for any modification */
-    private inner class AnyUpdateSubject : Subject<Any?> {
-
-        val observers = mutableListOf<Observer<Any?>>()
-
-        override fun addObserver(observer : Observer<Any?>) { observers.add(observer) }
-        override fun removeObserver(observer: Observer<Any?>) { observers.remove(observer) }
-        override fun notifySubjects() { for (o in observers) o.update(null) }
-    }
+                                val date_added: String,
+                                val title: String,
+                                val artist: String?,
+                                val album: String?,
+                                val track_num: Int?,
+                                val year: Int?,
+                                val duration: Long,
+                                val last_modified: String,
+                                val play_count: Int,
+                                val tags: Set<String>)
 }
+
+internal data class SongMetaData(val title:     String? = null,
+                                 val artist:    String? = null,
+                                 val album:     String? = null,
+                                 val trackNum:  Int?    = null,
+                                 val year:      Int?    = null,
+                                 val duration:  Long)

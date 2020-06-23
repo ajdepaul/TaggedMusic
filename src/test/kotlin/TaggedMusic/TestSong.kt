@@ -6,16 +6,23 @@ import kotlin.test.assertNull
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
+
+import java.time.LocalDateTime
 
 import TaggedMusic.SongMetaData
 
 class SongTest {
 
+    fun assertLastModifiedUpdated(before: LocalDateTime, after: LocalDateTime): LocalDateTime {
+        assertTrue(before < after)
+        return after
+    }
+
     @Test fun testSong() {
 
         // constructor 1
-        var metaData = SongMetaData(duration=1000)
-        var song = Song("file.mp3", metaData)
+        var song = Song("file.mp3", SongMetaData(duration=1000))
 
         assertEquals("file.mp3", song.file)
         assertNotNull(song.dateAdded)
@@ -30,8 +37,7 @@ class SongTest {
         assertTrue(song.tags.isEmpty())
 
         // constructor 2
-        metaData = SongMetaData("title", "artist", "album", 1, 2020, 1000)
-        song = Song("file.mp3", metaData)
+        song = Song("file.mp3", SongMetaData("title", "artist", "album", 1, 2020, 1000))
 
         assertEquals("file.mp3", song.file)
         assertNotNull(song.dateAdded)
@@ -46,43 +52,56 @@ class SongTest {
         assertTrue(song.tags.isEmpty())
 
         // modifications
+        var before: LocalDateTime = song.lastModified
+
         song.title = "title2"
+        before = assertLastModifiedUpdated(before, song.lastModified)
         assertEquals("title2", song.title)
+
         song.artist = "artist2"
+        before = assertLastModifiedUpdated(before, song.lastModified)
         assertEquals("artist2", song.artist)
+
         song.album = "album2"
+        before = assertLastModifiedUpdated(before, song.lastModified)
         assertEquals("album2", song.album)
+
         song.trackNum = 2
+        before = assertLastModifiedUpdated(before, song.lastModified)
         assertEquals(2, song.trackNum)
+
         song.year = 2021
+        before = assertLastModifiedUpdated(before, song.lastModified)
         assertEquals(2021, song.year)
+
         song.playCount++
+        before = assertLastModifiedUpdated(before, song.lastModified)
         assertEquals(1, song.playCount)
 
         song.tags += "A"
-        assertTrue(song.tags.contains("A"))
-        assertFalse(song.tags.contains("B"))
+        before = assertLastModifiedUpdated(before, song.lastModified)
+        assertEquals(setOf("A"), song.tags)
 
         song.tags += "B"
-        assertTrue(song.tags.contains("A"))
-        assertTrue(song.tags.contains("B"))
+        before = assertLastModifiedUpdated(before, song.lastModified)
+        assertEquals(setOf("A", "B"), song.tags)
 
         song.tags -= "A"
-        assertFalse(song.tags.contains("A"))
-        assertTrue(song.tags.contains("B"))
+        before = assertLastModifiedUpdated(before, song.lastModified)
+        assertEquals(setOf("B"), song.tags)
 
         song.tags -= "B"
-        assertFalse(song.tags.contains("A"))
-        assertFalse(song.tags.contains("B"))
+        assertLastModifiedUpdated(before, song.lastModified)
         assertTrue(song.tags.isEmpty())
     }
 
-    @Test fun testEquals() {
+    @Test fun testHashAndEquals() {
 
         var song1 = Song("file.mp3", SongMetaData("title", "artist", "album", 1, 2020, 1000))
         var song2 = Song("file.mp3", SongMetaData("title", "artist", "album", 1, 2020, 1000))
         assertTrue(song1 == song2)
         assertTrue(song2 == song1)
+        assertEquals(song1.hashCode(), song2.hashCode())
 
         assertFalse(song1.equals("string"))
 
@@ -90,18 +109,22 @@ class SongTest {
         song2 = Song("file.mp3", SongMetaData("title2", "artist2", "album2", 2, 2022, 1002))
         assertTrue(song1 == song2)
         assertTrue(song2 == song1)
+        assertEquals(song1.hashCode(), song2.hashCode())
 
         song1 = Song("file1.mp3", SongMetaData("title", "artist", "album", 1, 2020, 1000))
         song2 = Song("file2.mp3", SongMetaData("title", "artist", "album", 1, 2020, 1000))
         assertFalse(song1 == song2)
         assertFalse(song2 == song1)
+        assertNotEquals(song1.hashCode(), song2.hashCode())
     }
 
     @Test fun testJson() {
         
         val song1 = Song("file.mp3", SongMetaData("title", "artist", "album", 1, 2020, 1000))
-        song1.playCount = 10
-        song1.tags = setOf("A", "B", "C")
+            .apply {
+                playCount = 10
+                tags = setOf("A", "B", "C")
+            }
 
         val song2 = Song.fromJson(song1.toJson())
 
@@ -113,7 +136,73 @@ class SongTest {
         assertEquals(song1.trackNum, song2.trackNum)
         assertEquals(song1.year, song2.year)
         assertEquals(song1.duration, song2.duration)
+        assertEquals(song1.lastModified, song2.lastModified)
         assertEquals(song1.playCount, song2.playCount)
         assertEquals(song1.tags, song2.tags)
+    }
+
+    private class TagUpdateObserver : Observer<TagsBeforeAfter> {
+
+        var updated = false
+            get() {
+                var value = field
+                field = false
+                return value
+            }
+
+        override fun update(dat: TagsBeforeAfter) { updated = true }
+    }
+
+    private class AnyUpdateObserver : Observer<LocalDateTime> {
+
+        var updated = false
+            get() {
+                var value = field
+                field = false
+                return value
+            }
+
+        override fun update(dat: LocalDateTime) { updated = true }
+    }
+
+    @Test fun testObservers() {
+        
+        var song = Song("file.mp3", SongMetaData("title", "artist", "album", 1, 2020, 1000))
+
+        val tagObserver = TagUpdateObserver()
+            .also { song.tagUpdateSubject.addObserver(it) }
+        val anyObserver = AnyUpdateObserver()
+            .also { song.anyUpdateSubject.addObserver(it) }
+
+        assertFalse(tagObserver.updated)
+        assertFalse(anyObserver.updated)
+
+        song.title = "title2"
+        assertFalse(tagObserver.updated)
+        assertTrue(anyObserver.updated)
+
+        song.artist = "artist2"
+        assertFalse(tagObserver.updated)
+        assertTrue(anyObserver.updated)
+
+        song.album = "album2"
+        assertFalse(tagObserver.updated)
+        assertTrue(anyObserver.updated)
+
+        song.trackNum = 2
+        assertFalse(tagObserver.updated)
+        assertTrue(anyObserver.updated)
+
+        song.year = 2021
+        assertFalse(tagObserver.updated)
+        assertTrue(anyObserver.updated)
+
+        song.playCount++
+        assertFalse(tagObserver.updated)
+        assertTrue(anyObserver.updated)
+
+        song.tags += "tag"
+        assertTrue(tagObserver.updated)
+        assertTrue(anyObserver.updated)
     }
 }
