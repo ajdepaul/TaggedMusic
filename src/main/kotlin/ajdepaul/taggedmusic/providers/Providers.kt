@@ -1,7 +1,7 @@
-package taggedmusic.providers
+package ajdepaul.taggedmusic.providers
 
-import taggedmusic.SongLibrary
-import taggedmusic.Song
+import ajdepaul.taggedmusic.SongLibrary
+import ajdepaul.taggedmusic.Song
 
 interface LibraryProvider {
     fun download(): SongLibrary

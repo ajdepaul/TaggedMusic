@@ -1,4 +1,4 @@
-package taggedmusic
+package ajdepaul.taggedmusic
 
 import com.google.gson.Gson
 

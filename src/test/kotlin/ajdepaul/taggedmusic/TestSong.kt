@@ -1,4 +1,4 @@
-package taggedmusic
+package ajdepaul.taggedmusic
 
 import kotlin.test.Test
 import kotlin.test.assertEquals

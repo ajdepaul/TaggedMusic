@@ -1,6 +1,6 @@
-package taggedmusic.providers
+package ajdepaul.taggedmusic.providers
 
-import taggedmusic.SongLibrary
+import ajdepaul.taggedmusic.SongLibrary
 
 class SftpLibraryProvider() : LibraryProvider {
     
