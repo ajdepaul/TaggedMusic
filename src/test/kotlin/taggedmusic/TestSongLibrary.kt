@@ -1,4 +1,4 @@
-package TaggedMusic
+package taggedmusic
 
 import kotlin.random.Random
 import kotlin.test.Test
@@ -10,7 +10,7 @@ import java.time.LocalDateTime
 
 class TestSongTest {
 
-    fun assertUpdated(before: LocalDateTime, after: LocalDateTime): LocalDateTime {
+    private fun assertUpdated(before: LocalDateTime, after: LocalDateTime): LocalDateTime {
         assertTrue(before < after)
         return after
     }
@@ -189,8 +189,13 @@ class TestSongTest {
         assertTrue(songLibrary.songs.isEmpty())
     }
 
-    @Test fun testTagTypeUpdates() {
-        // removing a tag type 
+    @Test fun testTagTypes() {
+        val songLibrary = SongLibrary()
+        val song = Song("file.mp3", SongMetaData("title", "artist", "album", 1, 2020, 1000))
+            .apply { tags = setOf("tagA", "tagB") }
+            .also { songLibrary.songs += it }
+
+        // song.tagTypes += TagType("tagType", 1)
     }
 
     @Test fun testTagFilter() {

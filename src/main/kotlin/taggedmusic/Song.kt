@@ -1,4 +1,4 @@
-package TaggedMusic
+package taggedmusic
 
 import com.google.gson.Gson
 

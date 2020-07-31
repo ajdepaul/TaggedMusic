@@ -1,4 +1,4 @@
-package TaggedMusic
+package taggedmusic
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -10,11 +10,9 @@ import kotlin.test.assertNotEquals
 
 import java.time.LocalDateTime
 
-import TaggedMusic.SongMetaData
-
 class SongTest {
 
-    fun assertLastModifiedUpdated(before: LocalDateTime, after: LocalDateTime): LocalDateTime {
+    private fun assertLastModifiedUpdated(before: LocalDateTime, after: LocalDateTime): LocalDateTime {
         assertTrue(before < after)
         return after
     }
@@ -141,7 +139,7 @@ class SongTest {
         assertEquals(song1.tags, song2.tags)
     }
 
-    private class TagUpdateObserver : Observer<TagsBeforeAfter> {
+    private class TagUpdateObserver {
 
         var updated = false
             get() {
@@ -149,11 +147,11 @@ class SongTest {
                 field = false
                 return value
             }
-
-        override fun update(dat: TagsBeforeAfter) { updated = true }
+        
+        val updateFun = { _: TagsBeforeAfter -> updated = true }
     }
 
-    private class AnyUpdateObserver : Observer<LocalDateTime> {
+    private class AnyUpdateObserver {
 
         var updated = false
             get() {
@@ -162,7 +160,7 @@ class SongTest {
                 return value
             }
 
-        override fun update(dat: LocalDateTime) { updated = true }
+        val updateFun = { _: LocalDateTime -> updated = true }
     }
 
     @Test fun testObservers() {
@@ -170,9 +168,9 @@ class SongTest {
         var song = Song("file.mp3", SongMetaData("title", "artist", "album", 1, 2020, 1000))
 
         val tagObserver = TagUpdateObserver()
-            .also { song.tagUpdateSubject.addObserver(it) }
+            .also { song.tagUpdateSubject.addObserver(it.updateFun) }
         val anyObserver = AnyUpdateObserver()
-            .also { song.anyUpdateSubject.addObserver(it) }
+            .also { song.anyUpdateSubject.addObserver(it.updateFun) }
 
         assertFalse(tagObserver.updated)
         assertFalse(anyObserver.updated)

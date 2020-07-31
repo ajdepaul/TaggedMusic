@@ -1,4 +1,4 @@
-package TaggedMusic
+package taggedmusic
 
 import com.google.gson.Gson
 
@@ -8,9 +8,14 @@ internal typealias TagsBeforeAfter = Pair<Set<String>,Set<String>>
 
 class SongLibrary() {
     
-    // observers
-    private val tagUpdateObserver = TagUpdateObserver()
-    private val anyUpdateObserver = AnyUpdateObserver()
+    // observer updates
+    private val onAnyUpdate = { dat: LocalDateTime -> _lastModified = dat }
+    
+    private val onTagUpdate = { dat: TagsBeforeAfter ->
+        val (before, after) = dat
+        _tags += after
+        _tags -= before.filter { tag -> songs.all { song -> !song.tags.contains(tag) }}
+    }
 
     private var _lastModified = LocalDateTime.now()
     val lastModified: LocalDateTime get() { return _lastModified }
@@ -22,8 +27,8 @@ class SongLibrary() {
                 // remove any tags that are unused after the song is removed
                 _tags -= song.tags.filter { tag -> value.all { song -> !song.tags.contains(tag) }}
                 // update observers
-                song.tagUpdateSubject.removeObserver(tagUpdateObserver)
-                song.anyUpdateSubject.removeObserver(anyUpdateObserver)
+                song.tagUpdateSubject.removeObserver(onTagUpdate)
+                song.anyUpdateSubject.removeObserver(onAnyUpdate)
             }
 
             // songs added
@@ -31,8 +36,8 @@ class SongLibrary() {
                 // add new tags
                 _tags += song.tags
                 // update observers
-                song.tagUpdateSubject.addObserver(tagUpdateObserver)
-                song.anyUpdateSubject.addObserver(anyUpdateObserver)
+                song.tagUpdateSubject.addObserver(onTagUpdate)
+                song.anyUpdateSubject.addObserver(onAnyUpdate)
             }
 
             field = value
@@ -40,7 +45,6 @@ class SongLibrary() {
         }
     
     private var _tags = setOf<String>()
-    // val tags get() = _tags
     val tags: Set<String>
         get() {
             if (true) {
@@ -100,25 +104,6 @@ class SongLibrary() {
     }
 
     private data class JsonData(val last_modified: String)
-
-    // ---------------- Observers ---------------- //
-
-    private inner class TagUpdateObserver : Observer<TagsBeforeAfter> {
-
-        override fun update(dat : TagsBeforeAfter) {
-            val (before, after) = dat
-
-            // add new tags
-            _tags += after
-
-            // remove tags that are no longer in any songs
-            _tags -= before.filter { tag -> songs.all { song -> !song.tags.contains(tag) }}
-        }
-    }
-
-    private inner class AnyUpdateObserver : Observer<LocalDateTime> {
-        override fun update(dat : LocalDateTime) { _lastModified = dat }
-    }
 }
 
 data class TagType(val name: String, var color: Int) {
