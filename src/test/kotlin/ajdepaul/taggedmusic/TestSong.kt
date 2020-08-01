@@ -8,6 +8,8 @@ import kotlin.test.assertTrue
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 
+import kotlinx.collections.immutable.*
+
 import java.time.LocalDateTime
 
 class SongTest {
@@ -78,15 +80,15 @@ class SongTest {
 
         song.tags += "A"
         before = assertLastModifiedUpdated(before, song.lastModified)
-        assertEquals(setOf("A"), song.tags)
+        assertEquals(persistentSetOf("A"), song.tags)
 
         song.tags += "B"
         before = assertLastModifiedUpdated(before, song.lastModified)
-        assertEquals(setOf("A", "B"), song.tags)
+        assertEquals(persistentSetOf("A", "B"), song.tags)
 
         song.tags -= "A"
         before = assertLastModifiedUpdated(before, song.lastModified)
-        assertEquals(setOf("B"), song.tags)
+        assertEquals(persistentSetOf("B"), song.tags)
 
         song.tags -= "B"
         assertLastModifiedUpdated(before, song.lastModified)
@@ -121,7 +123,7 @@ class SongTest {
         val song1 = Song("file.mp3", SongMetaData("title", "artist", "album", 1, 2020, 1000))
             .apply {
                 playCount = 10
-                tags = setOf("A", "B", "C")
+                tags = persistentSetOf("A", "B", "C")
             }
 
         val song2 = Song.fromJson(song1.toJson())

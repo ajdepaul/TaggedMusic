@@ -2,7 +2,7 @@ package ajdepaul.taggedmusic
 
 import kotlin.collections.Collection
 
-// ------------------------------- Functions -------------------------------- //
+/* -------------------------------- Functions ------------------------------- */
 
 internal object Util {
 
@@ -15,7 +15,7 @@ internal object Util {
     }
 }
 
-// -------------------------------- Classes --------------------------------- //
+/* --------------------------------- Classes -------------------------------- */
 
 internal open class Subject<D> {
 

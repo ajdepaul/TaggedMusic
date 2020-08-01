@@ -1,13 +1,17 @@
 package ajdepaul.taggedmusic
 
-import com.google.gson.Gson
+import kotlinx.collections.immutable.*
 
 import java.time.LocalDateTime
+
+import com.google.gson.Gson
 
 internal typealias TagsBeforeAfter = Pair<Set<String>,Set<String>>
 
 class SongLibrary() {
     
+/* ------------------------------- Properties ------------------------------- */
+
     // observer updates
     private val onAnyUpdate = { dat: LocalDateTime -> _lastModified = dat }
     
@@ -20,7 +24,7 @@ class SongLibrary() {
     private var _lastModified = LocalDateTime.now()
     val lastModified: LocalDateTime get() { return _lastModified }
 
-    var songs = setOf<Song>()
+    var songs = persistentSetOf<Song>()
         set(value) {
             // songs removed
             for (song in Util.findRemoved(field, value)) {
@@ -44,19 +48,22 @@ class SongLibrary() {
             _lastModified = LocalDateTime.now()
         }
     
-    private var _tags = setOf<String>()
+    private var _tags = persistentSetOf<String>()
     val tags: Set<String>
         get() {
             if (true) {
-                _tags = songs.flatMap { song -> song.tags }.toSet()
+                _tags = songs.flatMap { song -> song.tags }.toPersistentSet()
             }
             return _tags
         }
 
-    var tagTypes = setOf<TagType>()
+    var tagTypes = persistentSetOf<TagType>()
         set(value) {
+
+            // remove any tagToType mappings for removed tagTypes
             var removed = Util.findRemoved(field, value)
             tagToType -= removed.map { tagType -> tagType.name }
+            
             field = value
             _lastModified = LocalDateTime.now()
         }
@@ -69,7 +76,7 @@ class SongLibrary() {
             _lastModified = LocalDateTime.now()
         }
 
-    // ---------------- Functions ---------------- //
+/* -------------------------------- Functions ------------------------------- */
 
     /**
      * @param inclTags songs must include these tags
@@ -81,7 +88,7 @@ class SongLibrary() {
                     .toSet()
     }
 
-    // ---------------- JSON ---------------- //
+/* ---------------------------------- JSON ---------------------------------- */
 
     /** Save song library as JSON */
     internal fun toJson(): String {
@@ -98,13 +105,15 @@ class SongLibrary() {
 
             return SongLibrary().apply {
                 _lastModified = LocalDateTime.parse(jsonData.last_modified)
-                _tags = songs.flatMap { song -> song.tags }.toSet()
+                _tags = songs.flatMap { song -> song.tags }.toPersistentSet()
             }
         }
     }
 
     private data class JsonData(val last_modified: String)
 }
+
+/* ------------------------------ Data Classes ------------------------------ */
 
 data class TagType(val name: String, var color: Int) {
     override fun hashCode(): Int { return name.hashCode() }

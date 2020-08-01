@@ -1,14 +1,18 @@
 package ajdepaul.taggedmusic
 
-import com.google.gson.Gson
+import kotlinx.collections.immutable.*
 
 import java.time.LocalDateTime
+
+import com.google.gson.Gson
 
 class Song internal constructor(
     val file: String,
     metaData: SongMetaData,
     val dateAdded: LocalDateTime = LocalDateTime.now()
 ) {
+
+/* ------------------------------- Properties ------------------------------- */
 
     // observers
     internal val tagUpdateSubject = Subject<TagsBeforeAfter>()
@@ -41,7 +45,7 @@ class Song internal constructor(
     var playCount: Int = 0
         set(value) { field = value; _lastModified = LocalDateTime.now() }
 
-    var tags = setOf<String>()
+    var tags = persistentSetOf<String>()
         set(value) {
             val before = field
             field = value
@@ -49,7 +53,7 @@ class Song internal constructor(
             _lastModified = LocalDateTime.now()
         }
 
-    // ---------------- Functions ---------------- //
+/* -------------------------------- Functions ------------------------------- */
 
     override fun hashCode(): Int { return file.hashCode() }
 
@@ -57,7 +61,7 @@ class Song internal constructor(
         return if (other is Song) this.file == other.file else false
     }
 
-    // ---------------- JSON ---------------- //
+/* ---------------------------------- JSON ---------------------------------- */
 
     /** Save song as JSON */
     internal fun toJson(): String {
@@ -91,7 +95,7 @@ class Song internal constructor(
             return Song(jsonData.file, metaData, LocalDateTime.parse(jsonData.date_added))
                 .apply {
                     playCount = jsonData.play_count
-                    tags = jsonData.tags
+                    tags = jsonData.tags.toPersistentSet()
                     _lastModified = LocalDateTime.parse(jsonData.last_modified)
                 }
         }
@@ -109,6 +113,8 @@ class Song internal constructor(
                                 val play_count: Int,
                                 val tags: Set<String>)
 }
+
+/* ------------------------------ Data Classes ------------------------------ */
 
 internal data class SongMetaData(val title:     String? = null,
                                  val artist:    String? = null,

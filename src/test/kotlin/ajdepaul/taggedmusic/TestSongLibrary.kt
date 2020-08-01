@@ -6,6 +6,8 @@ import kotlin.test.assertTrue
 import kotlin.test.assertFalse
 import kotlin.test.assertEquals
 
+import kotlinx.collections.immutable.*
+
 import java.time.LocalDateTime
 
 class TestSongTest {
@@ -28,7 +30,7 @@ class TestSongTest {
 
         songLibrary.songs += song
         before = assertUpdated(before, songLibrary.lastModified)
-        assertEquals(setOf(song), songLibrary.songs)
+        assertEquals(persistentSetOf(song), songLibrary.songs)
 
         songLibrary.songs -= song
         before = assertUpdated(before, songLibrary.lastModified)
@@ -36,7 +38,7 @@ class TestSongTest {
 
         songLibrary.tagTypes += TagType("type", 1)
         before = assertUpdated(before, songLibrary.lastModified)
-        assertEquals(setOf(TagType("type", 1)), songLibrary.tagTypes)
+        assertEquals(persistentSetOf(TagType("type", 1)), songLibrary.tagTypes)
 
         songLibrary.tagTypes -= TagType("type", 1)
         before = assertUpdated(before, songLibrary.lastModified)
@@ -90,54 +92,54 @@ class TestSongTest {
         // adding tags by adding tags to songs
         song1.tags += "tagA"
         before = assertUpdated(before, songLibrary.lastModified)
-        assertEquals(setOf("tagA"), songLibrary.tags)
+        assertEquals(persistentSetOf("tagA"), songLibrary.tags)
 
         song2.tags += "tagA"
         before = assertUpdated(before, songLibrary.lastModified)
-        assertEquals(setOf("tagA"), songLibrary.tags)
+        assertEquals(persistentSetOf("tagA"), songLibrary.tags)
 
         song1.tags += "tagB"
         before = assertUpdated(before, songLibrary.lastModified)
-        assertEquals(setOf("tagA", "tagB"), songLibrary.tags)
+        assertEquals(persistentSetOf("tagA", "tagB"), songLibrary.tags)
 
         song2.tags += "tagB"
         before = assertUpdated(before, songLibrary.lastModified)
-        assertEquals(setOf("tagA", "tagB"), songLibrary.tags)
+        assertEquals(persistentSetOf("tagA", "tagB"), songLibrary.tags)
 
         // removing tags by removing tags from songs
         song1.tags -= "tagA"
         before = assertUpdated(before, songLibrary.lastModified)
-        assertEquals(setOf("tagA", "tagB"), songLibrary.tags)
+        assertEquals(persistentSetOf("tagA", "tagB"), songLibrary.tags)
 
         song2.tags -= "tagA"
         before = assertUpdated(before, songLibrary.lastModified)
-        assertEquals(setOf("tagB"), songLibrary.tags)
+        assertEquals(persistentSetOf("tagB"), songLibrary.tags)
         
         song1.tags -= "tagB"
         before = assertUpdated(before, songLibrary.lastModified)
-        assertEquals(setOf("tagB"), songLibrary.tags)
+        assertEquals(persistentSetOf("tagB"), songLibrary.tags)
 
         song2.tags -= "tagB"
         before = assertUpdated(before, songLibrary.lastModified)
         assertTrue(songLibrary.tags.isEmpty())
 
         // adding and removing tags from songs at the same time
-        song1.tags = setOf("tagA", "tagB")
+        song1.tags = persistentSetOf("tagA", "tagB")
         before = assertUpdated(before, songLibrary.lastModified)
-        assertEquals(setOf("tagA", "tagB"), songLibrary.tags)
+        assertEquals(persistentSetOf("tagA", "tagB"), songLibrary.tags)
 
-        song2.tags = setOf("tagA", "tagC")
+        song2.tags = persistentSetOf("tagA", "tagC")
         before = assertUpdated(before, songLibrary.lastModified)
-        assertEquals(setOf("tagA", "tagB", "tagC"), songLibrary.tags)
+        assertEquals(persistentSetOf("tagA", "tagB", "tagC"), songLibrary.tags)
 
-        song1.tags = setOf("tagD")  // added D and removed A & B (but A gets to stay)
+        song1.tags = persistentSetOf("tagD")  // added D and removed A & B (but A gets to stay)
         before = assertUpdated(before, songLibrary.lastModified)
-        assertEquals(setOf("tagA", "tagC", "tagD"), songLibrary.tags)
+        assertEquals(persistentSetOf("tagA", "tagC", "tagD"), songLibrary.tags)
 
         // removing tags by removing songs
         songLibrary.songs -= song1
         before = assertUpdated(before, songLibrary.lastModified)
-        assertEquals(setOf("tagA", "tagC"), songLibrary.tags)
+        assertEquals(persistentSetOf("tagA", "tagC"), songLibrary.tags)
 
         songLibrary.songs -= song2
         before = assertUpdated(before, songLibrary.lastModified)
@@ -146,21 +148,21 @@ class TestSongTest {
         // adding tags by adding songs
         songLibrary.songs += song1
         before = assertUpdated(before, songLibrary.lastModified)
-        assertEquals(setOf("tagD"), songLibrary.tags)
+        assertEquals(persistentSetOf("tagD"), songLibrary.tags)
 
         songLibrary.songs += song2
         before = assertUpdated(before, songLibrary.lastModified)
-        assertEquals(setOf("tagA", "tagC", "tagD"), songLibrary.tags)
+        assertEquals(persistentSetOf("tagA", "tagC", "tagD"), songLibrary.tags)
 
         // adding and removing songs at the same time
-        song1.tags = setOf("tagA", "tagB")
-        assertEquals(setOf("tagA", "tagB", "tagC"), songLibrary.tags)
+        song1.tags = persistentSetOf("tagA", "tagB")
+        assertEquals(persistentSetOf("tagA", "tagB", "tagC"), songLibrary.tags)
 
-        song2.tags = setOf("tagA", "tagB", "tagC", "tagD")
-        assertEquals(setOf("tagA", "tagB", "tagC", "tagD"), songLibrary.tags)
+        song2.tags = persistentSetOf("tagA", "tagB", "tagC", "tagD")
+        assertEquals(persistentSetOf("tagA", "tagB", "tagC", "tagD"), songLibrary.tags)
 
         val song3 = Song("file3.mp3", SongMetaData("title", "artist", "album", 1, 2020, 1000))
-            .apply { tags = setOf("tagB", "tagC", "tagE") }
+            .apply { tags = persistentSetOf("tagB", "tagC", "tagE") }
 
         // remove a song that has a tag that should stay
         // remove a song that has a tag that should be removed
@@ -169,22 +171,22 @@ class TestSongTest {
         // add and remove a tag so that the tag should stay as a result
         songLibrary.songs = songLibrary.songs - song2 + song3
         before = assertUpdated(before, songLibrary.lastModified)
-        assertEquals(setOf("tagA", "tagB", "tagC", "tagE"), songLibrary.tags)
+        assertEquals(persistentSetOf("tagA", "tagB", "tagC", "tagE"), songLibrary.tags)
 
         // removed songs no longer update the songlibrary
-        song2.tags = setOf("tagF")
+        song2.tags = persistentSetOf("tagF")
         assertEquals(before, songLibrary.lastModified)
-        assertEquals(setOf("tagA", "tagB", "tagC", "tagE"), songLibrary.tags)
+        assertEquals(persistentSetOf("tagA", "tagB", "tagC", "tagE"), songLibrary.tags)
 
-        songLibrary.songs = setOf()
+        songLibrary.songs = persistentSetOf()
         before = assertUpdated(before, songLibrary.lastModified)
         assertTrue(songLibrary.songs.isEmpty())
 
-        song1.tags = setOf("tagA")
+        song1.tags = persistentSetOf("tagA")
         assertEquals(before, songLibrary.lastModified)
         assertTrue(songLibrary.songs.isEmpty())
 
-        song2.tags = setOf("tagA")
+        song2.tags = persistentSetOf("tagA")
         assertEquals(before, songLibrary.lastModified)
         assertTrue(songLibrary.songs.isEmpty())
     }
@@ -192,7 +194,7 @@ class TestSongTest {
     @Test fun testTagTypes() {
         val songLibrary = SongLibrary()
         val song = Song("file.mp3", SongMetaData("title", "artist", "album", 1, 2020, 1000))
-            .apply { tags = setOf("tagA", "tagB") }
+            .apply { tags = persistentSetOf("tagA", "tagB") }
             .also { songLibrary.songs += it }
 
         // song.tagTypes += TagType("tagType", 1)

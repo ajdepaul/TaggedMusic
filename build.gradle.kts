@@ -25,5 +25,9 @@ dependencies {
     // Use the Kotlin JUnit integration.
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
 
+    // https://mvnrepository.com/artifact/com.google.code.gson/gson
     implementation("com.google.code.gson:gson:2.8.6")
+
+    // https://github.com/Kotlin/kotlinx.collections.immutable
+    implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.2")
 }
