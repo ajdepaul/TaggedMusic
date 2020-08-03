@@ -5,6 +5,7 @@ plugins {
     id("org.jetbrains.kotlin.jvm") version "1.3.71"
 
     id("idea")
+    id("eclipse")
 }
 
 repositories {

@@ -15,7 +15,7 @@ class Song internal constructor(
 /* ------------------------------- Properties ------------------------------- */
 
     // observers
-    internal val tagUpdateSubject = Subject<TagsBeforeAfter>()
+    internal val tagUpdateSubject = Subject<Set<String>>()
     internal val anyUpdateSubject = Subject<LocalDateTime>()
 
     // metadata
@@ -45,13 +45,17 @@ class Song internal constructor(
     var playCount: Int = 0
         set(value) { field = value; _lastModified = LocalDateTime.now() }
 
-    var tags = persistentSetOf<String>()
+    // must be persistent map as the efficiency is relied on
+    var tags: PersistentSet<String>
+        get() { return _tags }
         set(value) {
-            val before = field
-            field = value
-            tagUpdateSubject.notifySubjects(Pair(before, value))
+            _tags = value
+            tagUpdateSubject.notifySubjects(value)
             _lastModified = LocalDateTime.now()
         }
+
+    // provides a way of manipulating the tags without notifying observers
+    internal var _tags: PersistentSet<String> = persistentHashSetOf()
 
 /* -------------------------------- Functions ------------------------------- */
 
@@ -63,45 +67,30 @@ class Song internal constructor(
 
 /* ---------------------------------- JSON ---------------------------------- */
 
-    /** Save song as JSON */
-    internal fun toJson(): String {
-        return Gson().toJson(JsonData(file,
-                                      dateAdded.toString(),
-                                      title,
-                                      artist,
-                                      album,
-                                      trackNum,
-                                      year,
-                                      duration,
-                                      lastModified.toString(),
-                                      playCount,
-                                      tags))
+    /** Save song as JsonData */
+    internal fun toJsonData(): JsonData {
+        return JsonData(file, dateAdded.toString(), title, artist, album, trackNum,
+                        year, duration, lastModified.toString(), playCount, tags)
     }
 
     companion object {
 
-        /** Load song from JSON */
-        internal fun fromJson(json: String): Song {
+        /** Load song from JsonData */
+        internal fun fromJsonData(jsonData: JsonData): Song {
 
-            val jsonData = Gson().fromJson(json, JsonData::class.java)
-
-            val metaData = SongMetaData(jsonData.title,
-                                        jsonData.artist,
-                                        jsonData.album,
-                                        jsonData.track_num,
-                                        jsonData.year,
-                                        jsonData.duration)
+            val metaData = SongMetaData(jsonData.title, jsonData.artist, jsonData.album,
+                                        jsonData.track_num, jsonData.year, jsonData.duration)
 
             return Song(jsonData.file, metaData, LocalDateTime.parse(jsonData.date_added))
                 .apply {
                     playCount = jsonData.play_count
-                    tags = jsonData.tags.toPersistentSet()
+                    tags = jsonData.tags.toPersistentHashSet()
                     _lastModified = LocalDateTime.parse(jsonData.last_modified)
                 }
         }
     }
 
-    private data class JsonData(val file: String,
+    internal data class JsonData(val file: String,
                                 val date_added: String,
                                 val title: String,
                                 val artist: String?,
@@ -116,9 +105,9 @@ class Song internal constructor(
 
 /* ------------------------------ Data Classes ------------------------------ */
 
-internal data class SongMetaData(val title:     String? = null,
-                                 val artist:    String? = null,
-                                 val album:     String? = null,
-                                 val trackNum:  Int?    = null,
-                                 val year:      Int?    = null,
-                                 val duration:  Long)
+internal data class SongMetaData(val title:    String? = null,
+                                 val artist:   String? = null,
+                                 val album:    String? = null,
+                                 val trackNum: Int?    = null,
+                                 val year:     Int?    = null,
+                                 val duration: Long)

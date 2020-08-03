@@ -6,72 +6,70 @@ import java.time.LocalDateTime
 
 import com.google.gson.Gson
 
-internal typealias TagsBeforeAfter = Pair<Set<String>,Set<String>>
-
 class SongLibrary() {
     
 /* ------------------------------- Properties ------------------------------- */
 
     // observer updates
     private val onAnyUpdate = { dat: LocalDateTime -> _lastModified = dat }
-    
-    private val onTagUpdate = { dat: TagsBeforeAfter ->
-        val (before, after) = dat
-        _tags += after
-        _tags -= before.filter { tag -> songs.all { song -> !song.tags.contains(tag) }}
-    }
+    private val onSongTagsUpdate = { dat: Set<String> -> tags += dat.map { tag -> Pair(tag, null) } }
 
     private var _lastModified = LocalDateTime.now()
     val lastModified: LocalDateTime get() { return _lastModified }
 
-    var songs = persistentSetOf<Song>()
+    // must be persistent set as the efficiency is relied on
+    var songs: PersistentSet<Song> = persistentHashSetOf<Song>()
         set(value) {
             // songs removed
             for (song in Util.findRemoved(field, value)) {
-                // remove any tags that are unused after the song is removed
-                _tags -= song.tags.filter { tag -> value.all { song -> !song.tags.contains(tag) }}
                 // update observers
-                song.tagUpdateSubject.removeObserver(onTagUpdate)
+                song.tagUpdateSubject.removeObserver(onSongTagsUpdate)
                 song.anyUpdateSubject.removeObserver(onAnyUpdate)
             }
 
             // songs added
             for (song in Util.findAdded(field, value)) {
                 // add new tags
-                _tags += song.tags
+                tags += song.tags.filterNot { tag -> tags.contains(tag) }
+                                 .map { tag -> Pair(tag, null) }
                 // update observers
-                song.tagUpdateSubject.addObserver(onTagUpdate)
+                song.tagUpdateSubject.addObserver(onSongTagsUpdate)
                 song.anyUpdateSubject.addObserver(onAnyUpdate)
             }
 
             field = value
             _lastModified = LocalDateTime.now()
         }
-    
-    private var _tags = persistentSetOf<String>()
-    val tags: Set<String>
-        get() {
-            if (true) {
-                _tags = songs.flatMap { song -> song.tags }.toPersistentSet()
-            }
-            return _tags
-        }
 
-    var tagTypes = persistentSetOf<TagType>()
+    // must be persistent set as the efficiency is relied on
+    /** key: tag, value: tag type name */
+    var tags: PersistentMap<String, String?> = persistentHashMapOf()
         set(value) {
-
-            // remove any tagToType mappings for removed tagTypes
-            var removed = Util.findRemoved(field, value)
-            tagToType -= removed.map { tagType -> tagType.name }
+            // if there are new tag types mapped, add them to the tagTypes set
+            tagTypes += value.filter { entry -> field[entry.key] != entry.value
+                                                && !tagTypes.keys.contains(entry.value) }
+                            // entry.value guaranteed not null
+                             .map { entry -> Pair(entry.value!!, defaultTagType.copy()) }
             
+            // removed the tags that have been removed from each song
+            val removedTags = Util.findRemoved(field, value).map { it.key }
+            songs.forEach { it._tags -= removedTags }
+
             field = value
             _lastModified = LocalDateTime.now()
         }
 
-    var tagToType = mapOf<String, TagType>()
+    /** Default tag type data when either:
+     *  1. a tag name is mapped to null in the tags map, or
+     *  2. a new tag type is created indirectly by adding a tag type name to the
+     *     tags map that isn't already in the tagTypes map
+     */
+    var defaultTagType = TagTypeData(0)
+
+    /** key: tag type name, value: tag type data */
+    var tagTypes: PersistentMap<String, TagTypeData> = persistentHashMapOf()
         set(value) {
-            var added = value.entries.filter { entry -> field.keys.contains(entry.key) }
-            for (entry in added) tagTypes += entry.value
+            Util.findAdded(field, value)
             field = value
             _lastModified = LocalDateTime.now()
         }
@@ -79,13 +77,12 @@ class SongLibrary() {
 /* -------------------------------- Functions ------------------------------- */
 
     /**
-     * @param inclTags songs must include these tags
-     * @param exclTags songs cannot have these tags
+     * @param inclTags songs must include these tag names
+     * @param exclTags songs cannot have these tag names
      */
     fun tagFilter(inclTags: Set<String>, exclTags: Set<String>): Set<Song> {
         return songs.filter { song -> song.tags.containsAll(inclTags) }
-                    .filter { song -> !song.tags.any { tag -> exclTags.contains(tag) }}
-                    .toSet()
+                    .filterNot { song -> song.tags.any { tag -> exclTags.contains(tag) }}.toSet()
     }
 
 /* ---------------------------------- JSON ---------------------------------- */
@@ -105,7 +102,7 @@ class SongLibrary() {
 
             return SongLibrary().apply {
                 _lastModified = LocalDateTime.parse(jsonData.last_modified)
-                _tags = songs.flatMap { song -> song.tags }.toPersistentSet()
+                // _tags = songs.flatMap { song -> song.tags }.toPersistentHashSetOf()
             }
         }
     }
@@ -113,11 +110,6 @@ class SongLibrary() {
     private data class JsonData(val last_modified: String)
 }
 
-/* ------------------------------ Data Classes ------------------------------ */
+/* ------------------------------ Tag Type Data ----------------------------- */
 
-data class TagType(val name: String, var color: Int) {
-    override fun hashCode(): Int { return name.hashCode() }
-    override fun equals(other: Any?): Boolean {
-        return if (other is TagType) this.name == other.name else false
-    }
-}
+data class TagTypeData(val color: Int)

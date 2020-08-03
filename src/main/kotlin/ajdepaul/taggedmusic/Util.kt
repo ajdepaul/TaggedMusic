@@ -6,12 +6,24 @@ import kotlin.collections.Collection
 
 internal object Util {
 
-    fun <E> findAdded(before: Collection<E>, after: Collection<E>): Collection<E> {
-        return after.filter { e -> !before.contains(e) }
+    /** Finds elements that are in [after], but not in [before] */
+    fun <E> findAdded(before: Set<E>, after: Set<E>): Collection<E> {
+        return after.filter { !before.contains(it) }
     }
 
-    fun <E> findRemoved(before: Collection<E>, after: Collection<E>): Collection<E> {
-        return before.filter { e -> !after.contains(e) }
+    /** Finds elements that are in [before], but not in [after] */
+    fun <E> findRemoved(before: Set<E>, after: Set<E>): Collection<E> {
+        return before.filter { !after.contains(it) }
+    }
+
+    /** Finds entries with keys that are in [after], but not in [before] */
+    fun <K,V> findAdded(before: Map<K,V>, after: Map<K,V>): Map<K,V> {
+        return after.filter { !before.contains(it.key) }
+    }
+
+    /** Finds entries with keys that are in [before], but not in [after] */
+    fun <K,V> findRemoved(before: Map<K,V>, after: Map<K,V>): Map<K,V> {
+        return before.filter { !after.contains(it.key) }
     }
 }
 

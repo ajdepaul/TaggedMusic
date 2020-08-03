@@ -1,16 +1,10 @@
 package ajdepaul.taggedmusic
 
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNull
-import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
-import kotlin.test.assertFalse
-import kotlin.test.assertNotEquals
-
-import kotlinx.collections.immutable.*
-
+import kotlinx.collections.immutable.minus
+import kotlinx.collections.immutable.persistentHashSetOf
+import kotlinx.collections.immutable.plus
 import java.time.LocalDateTime
+import kotlin.test.*
 
 class SongTest {
 
@@ -78,17 +72,18 @@ class SongTest {
         before = assertLastModifiedUpdated(before, song.lastModified)
         assertEquals(1, song.playCount)
 
+        // tags
         song.tags += "A"
         before = assertLastModifiedUpdated(before, song.lastModified)
-        assertEquals(persistentSetOf("A"), song.tags)
+        assertEquals(setOf("A"), song.tags)
 
         song.tags += "B"
         before = assertLastModifiedUpdated(before, song.lastModified)
-        assertEquals(persistentSetOf("A", "B"), song.tags)
+        assertEquals(setOf("A", "B"), song.tags)
 
         song.tags -= "A"
         before = assertLastModifiedUpdated(before, song.lastModified)
-        assertEquals(persistentSetOf("B"), song.tags)
+        assertEquals(setOf("B"), song.tags)
 
         song.tags -= "B"
         assertLastModifiedUpdated(before, song.lastModified)
@@ -99,34 +94,34 @@ class SongTest {
 
         var song1 = Song("file.mp3", SongMetaData("title", "artist", "album", 1, 2020, 1000))
         var song2 = Song("file.mp3", SongMetaData("title", "artist", "album", 1, 2020, 1000))
-        assertTrue(song1 == song2)
-        assertTrue(song2 == song1)
+        assertEquals(song1, song2)
+        assertEquals(song2, song1)
         assertEquals(song1.hashCode(), song2.hashCode())
 
         assertFalse(song1.equals("string"))
 
         song1 = Song("file.mp3", SongMetaData("title1", "artist1", "album1", 1, 2021, 1001))
         song2 = Song("file.mp3", SongMetaData("title2", "artist2", "album2", 2, 2022, 1002))
-        assertTrue(song1 == song2)
-        assertTrue(song2 == song1)
+        assertEquals(song1, song2)
+        assertEquals(song2, song1)
         assertEquals(song1.hashCode(), song2.hashCode())
 
         song1 = Song("file1.mp3", SongMetaData("title", "artist", "album", 1, 2020, 1000))
         song2 = Song("file2.mp3", SongMetaData("title", "artist", "album", 1, 2020, 1000))
-        assertFalse(song1 == song2)
-        assertFalse(song2 == song1)
+        assertNotEquals(song1, song2)
+        assertNotEquals(song2, song1)
         assertNotEquals(song1.hashCode(), song2.hashCode())
     }
 
     @Test fun testJson() {
-        
+
         val song1 = Song("file.mp3", SongMetaData("title", "artist", "album", 1, 2020, 1000))
             .apply {
                 playCount = 10
-                tags = persistentSetOf("A", "B", "C")
+                tags = persistentHashSetOf("A", "B", "C")
             }
 
-        val song2 = Song.fromJson(song1.toJson())
+        val song2 = Song.fromJsonData(song1.toJsonData())
 
         assertEquals(song1.file, song2.file)
         assertEquals(song1.dateAdded.toString(), song2.dateAdded.toString())
@@ -150,7 +145,7 @@ class SongTest {
                 return value
             }
         
-        val updateFun = { _: TagsBeforeAfter -> updated = true }
+        val updateFun = { _: Set<String> -> updated = true }
     }
 
     private class AnyUpdateObserver {
