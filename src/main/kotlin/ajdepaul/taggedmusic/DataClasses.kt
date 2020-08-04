@@ -9,29 +9,29 @@ import java.time.LocalDateTime
 
 data class Song internal constructor(
         val title:        String,
+        val duration:     Long,
         val artist:       String?       = null,
         val album:        String?       = null,
         val trackNum:     Int?          = null,
         val year:         Int?          = null,
-        val duration:     Long,
         val lastModified: LocalDateTime = LocalDateTime.now(),
         val playCount:    Int           = 0,
         val tags:         Set<String>   = persistentHashSetOf()) {
 
     fun mutate(title:              String      = this.title,
+               duration:           Long        = this.duration,
                artist:             String?     = this.artist,
                album:              String?     = this.album,
                trackNum:           Int?        = this.trackNum,
                year:               Int?        = this.year,
-               duration:           Long        = this.duration,
                playCount:          Int         = this.playCount,
                tags:               Set<String> = this.tags,
                updateLastModified: Boolean     = true
     ): Song {
 
         return if (updateLastModified)
-            Song(title, artist, album, trackNum, year, duration, LocalDateTime.now(), playCount, tags)
-        else Song(title, artist, album, trackNum, year, duration, lastModified, playCount, tags)
+            Song(title, duration, artist, album, trackNum, year, LocalDateTime.now(), playCount, tags)
+        else Song(title, duration, artist, album, trackNum, year, lastModified, playCount, tags)
     }
 }
 

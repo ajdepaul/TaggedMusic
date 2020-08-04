@@ -4,33 +4,33 @@ import kotlinx.collections.immutable.*
 
 import java.time.LocalDateTime
 
-import com.google.gson.Gson
-
 class SongLibrary(defaultTagType: TagType = TagType(0)) {
     
 /* ------------------------------- Properties ------------------------------- */
 
-    private var _lastModified = LocalDateTime.now()
     val lastModified: LocalDateTime get() { return _lastModified }
+    private var _lastModified = LocalDateTime.now()
 
     /** key: file path, value: song data */
     val songs: Map<String, Song> get() { return _songs }
-    var _songs: PersistentMap<String, Song> = persistentHashMapOf()
+    private var _songs: PersistentMap<String, Song> = persistentHashMapOf()
 
     /** key: tag, value: tag data */
     val tags: Map<String, Tag> get() { return _tags }
-    var _tags: PersistentMap<String, Tag> = persistentHashMapOf()
+    private var _tags: PersistentMap<String, Tag> = persistentHashMapOf()
 
     /**
      * key: tag type name, value: tag type data
      * null key refers to the default tag type
      */
     val tagTypes: Map<String?, TagType> get() { return _tagTypes }
-    var _tagTypes: PersistentMap<String?, TagType> = persistentHashMapOf<String?, TagType>()
-            .let { it + (null to defaultTagType)}   // default tag type
+    private var _tagTypes: PersistentMap<String?, TagType> = persistentHashMapOf<String?, TagType>()
 
-    private inline val defaultTagType: TagType
+    var defaultTagType: TagType
         get() { return tagTypes[null] ?: error("Default tag type not in tagTypes[null]") }
+        set(value) { _tagTypes += null to value }
+
+    init { this.defaultTagType = defaultTagType }
 
 /* -------------------------------- Functions ------------------------------- */
 
@@ -80,22 +80,20 @@ class SongLibrary(defaultTagType: TagType = TagType(0)) {
 
 /* ---------------------------------- JSON ---------------------------------- */
 
-    /** Save song library as JSON */
-    internal fun toJson(): String {
-        return Gson().toJson(JsonData(lastModified.toString(), songs, tags, tagTypes))
+    fun toJsonData(): JsonData {
+        return JsonData(lastModified.toString(), songs, tags, tagTypes)
     }
 
     /** Load song library from JSON */
-    constructor(json: String) : this() {
-        val jsonData = Gson().fromJson(json, JsonData::class.java)
+    constructor(jsonData: JsonData) : this() {
         _lastModified = LocalDateTime.parse(jsonData.lastModified)
         _songs        = jsonData.songs.toPersistentHashMap()
         _tags         = jsonData.tags.toPersistentHashMap()
         _tagTypes     = jsonData.tagTypes.toPersistentHashMap()
     }
 
-    private data class JsonData(val lastModified: String,
-                                val songs:         Map<String, Song>,
-                                val tags:          Map<String, Tag>,
-                                val tagTypes:      Map<String?, TagType>)
+    data class JsonData(val lastModified: String,
+                        val songs:        Map<String, Song>,
+                        val tags:         Map<String, Tag>,
+                        val tagTypes:     Map<String?, TagType>)
 }

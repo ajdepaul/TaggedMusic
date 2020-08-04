@@ -1,11 +1,10 @@
 package ajdepaul.taggedmusic
 
-import org.junit.Test
+import kotlin.test.*
 
 class TestDataClasses {
 
     @Test fun testSongMutate() {
-
     }
 
     @Test fun testTagMutate() {
