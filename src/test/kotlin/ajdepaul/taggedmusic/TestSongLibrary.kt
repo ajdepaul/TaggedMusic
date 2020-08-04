@@ -1,16 +1,11 @@
 package ajdepaul.taggedmusic
 
-import kotlin.random.Random
-import kotlin.test.Test
-import kotlin.test.assertTrue
-import kotlin.test.assertFalse
-import kotlin.test.assertEquals
-
 import kotlinx.collections.immutable.*
 
 import java.time.LocalDateTime
+import kotlin.test.*
 
-class TestSongTest {
+class TestDataClassesTest {
 
     private fun assertUpdated(before: LocalDateTime, after: LocalDateTime): LocalDateTime {
         assertTrue(before < after)
@@ -18,141 +13,148 @@ class TestSongTest {
     }
 
     @Test fun testSongLibrary() {
-        val songLibrary = SongLibrary()
-        assertTrue(songLibrary.tags.isEmpty())
-        assertTrue(songLibrary.songs.isEmpty())
-        assertTrue(songLibrary.tagTypes.isEmpty())
-
-        // modifications
-        var before: LocalDateTime = songLibrary.lastModified
-
-        val song = Song("file.mp3", SongMetaData("title", "artist", "album", 1, 2020, 1000))
-
-        songLibrary.songs += song
-        before = assertUpdated(before, songLibrary.lastModified)
-        assertEquals(persistentHashSetOf(song), songLibrary.songs)
-
-        songLibrary.tags += Pair("A", null)
-        before = assertUpdated(before, songLibrary.lastModified)
-        assertEquals(mapOf(Pair<String, String?>("A", null)), songLibrary.tags)
-
-        songLibrary.tags += Pair("B", "tagType")
-        before = assertUpdated(before, songLibrary.lastModified)
-        assertEquals(mapOf(Pair<String, String?>("A", null), Pair("B", "tagType")), songLibrary.tags)
-
-        songLibrary.tags -= "A"
-        before = assertUpdated(before, songLibrary.lastModified)
-        assertEquals(mapOf(Pair<String, String?>("B", "tagType")), songLibrary.tags)
-
-        songLibrary.tags -= "B"
-        before = assertUpdated(before, songLibrary.lastModified)
-        assertTrue(songLibrary.tags.isEmpty())
-
-
-
-//        songLibrary.songs -= song
-//        before = assertUpdated(before, songLibrary.lastModified)
+//        val songLibrary = SongLibrary()
+//        assertTrue(songLibrary.tags.isEmpty())
 //        assertTrue(songLibrary.songs.isEmpty())
-//
-//        songLibrary.tagTypes += TagType("type", 1)
-//        before = assertUpdated(before, songLibrary.lastModified)
-//        assertEquals(persistentHashSetOf(TagType("type", 1)), songLibrary.tagTypes)
-//
-//        songLibrary.tagTypes -= TagType("type", 1)
-//        before = assertUpdated(before, songLibrary.lastModified)
 //        assertTrue(songLibrary.tagTypes.isEmpty())
 //
-//        songLibrary.tagToTypeMap += Pair("tag", TagType("type", 1))
-//        before = assertUpdated(before, songLibrary.lastModified)
-//        assertEquals(mapOf(Pair("tag", TagType("type", 1))), songLibrary.tagToTypeMap)
+//        // modifications
+//        var before: LocalDateTime = songLibrary.lastModified
 //
-//        songLibrary.tagToTypeMap -= "tag"
+//        val song = DataClasses("file.mp3", SongMetaData("title", "artist", "album", 1, 2020, 1000))
+//
+//        songLibrary.songs += song
+//        before = assertUpdated(before, songLibrary.lastModified)
+//        assertEquals(persistentHashSetOf(song), songLibrary.songs)
+//
+//        // tags
+//        songLibrary.tags += Pair("A", null)
+//        before = assertUpdated(before, songLibrary.lastModified)
+//        assertEquals(mapOf<String, String?>(Pair("A", null)), songLibrary.tags)
+//
+//        songLibrary.tags += Pair("B", "tagType")
+//        before = assertUpdated(before, songLibrary.lastModified)
+//        assertEquals(mapOf<String, String?>(Pair("A", null), Pair("B", "tagType")), songLibrary.tags)
+//        // tag
+//        assertEquals(mapOf(Pair("tagType", songLibrary.defaultTagType)), songLibrary.tagTypes)
+//
+//        songLibrary.tags -= "A"
+//        before = assertUpdated(before, songLibrary.lastModified)
+//        assertEquals(mapOf<String, String?>(Pair("B", "tagType")), songLibrary.tags)
+//
+//        songLibrary.tags -= "B"
 //        assertUpdated(before, songLibrary.lastModified)
-//        assertTrue(songLibrary.tagToTypeMap.isEmpty())
+//        assertTrue(songLibrary.tags.isEmpty())
+//
+//        // default tag type
+//        songLibrary.defaultTagType = TagTypeData(1)
+//        assertEquals(TagTypeData(1), songLibrary.defaultTagType)
+//
+//        songLibrary.defaultTagType = TagTypeData(2)
+//        assertEquals(TagTypeData(2), songLibrary.defaultTagType)
+//
+//        // tag types
+//        songLibrary.tagTypes = persistentHashMapOf()
+//        assertTrue(songLibrary.tagTypes.isEmpty())
+//
+//        songLibrary.tagTypes += Pair("tagType1", TagTypeData(100))
+//        assertEquals(mapOf(Pair("tagType1", TagTypeData(100))), songLibrary.tagTypes)
+//
+//        songLibrary.tagTypes += Pair("tagType2", TagTypeData(200))
+//        assertEquals(mapOf(Pair("tagType1", TagTypeData(100)), Pair("tagType2", TagTypeData(200))), songLibrary.tagTypes)
+//
+//        songLibrary.tagTypes -= "tagType1"
+//        assertEquals(mapOf(Pair("tagType2", TagTypeData(200))), songLibrary.tagTypes)
+//
+//        songLibrary.tagTypes -= "tagType2"
+//        assertTrue(songLibrary.tagTypes.isEmpty())
     }
 
     @Test fun testSongUpdates() {
 //        val songLibrary = SongLibrary()
-//        val song = Song("file.mp3", SongMetaData("title", "artist", "album", 1, 2020, 1000))
+//
+//        val song1 = DataClasses("file1.mp3", SongMetaData("title", "artist", "album", 1, 2020, 1000))
 //            .also { songLibrary.songs += it }
 //
+//        // general
 //        var before: LocalDateTime = songLibrary.lastModified
-//
-//        song.title =  "title2"
+//        song1.title =  "title2"
 //        before = assertUpdated(before, songLibrary.lastModified)
 //
-//        song.artist = "artist2"
+//        song1.artist = "artist2"
 //        before = assertUpdated(before, songLibrary.lastModified)
 //
-//        song.album = "album2"
+//        song1.album = "album2"
 //        before = assertUpdated(before, songLibrary.lastModified)
 //
-//        song.trackNum = 2
+//        song1.trackNum = 2
 //        before = assertUpdated(before, songLibrary.lastModified)
 //
-//        song.year = 2021
+//        song1.year = 2021
 //        before = assertUpdated(before, songLibrary.lastModified)
 //
-//        song.playCount++
+//        song1.playCount++
+//        before = assertUpdated(before, songLibrary.lastModified)
+//
+//        // tags
+//        song1.tags += "A"
+//        before = assertUpdated(before, songLibrary.lastModified)
+//        assertEquals(mapOf<String, String?>(Pair("A", null)), songLibrary.tags)
+//
+//        song1.tags += "B"
+//        before = assertUpdated(before, songLibrary.lastModified)
+//        assertEquals(mapOf<String, String?>(Pair("A", null), Pair("B", null)), songLibrary.tags)
+//
+//        song1.tags -= "A"
+//        before = assertUpdated(before, songLibrary.lastModified)
+//        assertEquals(mapOf<String, String?>(Pair("A", null), Pair("B", null)), songLibrary.tags)
+//
+//        song1.tags -= "B"
+//        before = assertUpdated(before, songLibrary.lastModified)
+//        assertEquals(mapOf<String, String?>(Pair("A", null), Pair("B", null)), songLibrary.tags)
+//
+//        val song2 = DataClasses("file2.mp3", SongMetaData("title", "artist", "album", 1, 2020, 1000))
+//                .also { songLibrary.songs += it }
+//
+//        song2.tags += "A"
+//        before = assertUpdated(before, songLibrary.lastModified)
+//        assertEquals(mapOf<String, String?>(Pair("A", null), Pair("B", null)), songLibrary.tags)
+//
+//        song2.tags += "B"
+//        before = assertUpdated(before, songLibrary.lastModified)
+//        assertEquals(mapOf<String, String?>(Pair("A", null), Pair("B", null)), songLibrary.tags)
+//
+//        song2.tags -= "A"
+//        before = assertUpdated(before, songLibrary.lastModified)
+//        assertEquals(mapOf<String, String?>(Pair("A", null), Pair("B", null)), songLibrary.tags)
+//
+//        song2.tags -= "B"
+//        before = assertUpdated(before, songLibrary.lastModified)
+//        assertEquals(mapOf<String, String?>(Pair("A", null), Pair("B", null)), songLibrary.tags)
+//
+//        song2.tags += "C"
+//        before = assertUpdated(before, songLibrary.lastModified)
+//        assertEquals(mapOf<String, String?>(Pair("A", null), Pair("B", null), Pair("C", null)), songLibrary.tags)
+//
+//        song2.tags -= "C"
+//        before = assertUpdated(before, songLibrary.lastModified)
+//        assertEquals(mapOf<String, String?>(Pair("A", null), Pair("B", null), Pair("C", null)), songLibrary.tags)
+//
+//        // removing songs
+//        songLibrary.songs -= song1
+//        before = assertUpdated(before, songLibrary.lastModified)
+//        assertEquals(mapOf<String, String?>(Pair("A", null), Pair("B", null), Pair("C", null)), songLibrary.tags)
+//
+//        songLibrary.songs -= song1
 //        assertUpdated(before, songLibrary.lastModified)
+//        assertEquals(mapOf<String, String?>(Pair("A", null), Pair("B", null), Pair("C", null)), songLibrary.tags)
     }
 
     @Test fun testTagUpdates() {
-//        val songLibrary = SongLibrary()
-//        val song1 = Song("file1.mp3", SongMetaData("title", "artist", "album", 1, 2020, 1000))
-//            .also { songLibrary.songs += it }
-//
-//        val song2 = Song("file2.mp3", SongMetaData("title", "artist", "album", 1, 2020, 1000))
-//            .also { songLibrary.songs += it }
-//
-//        var before: LocalDateTime = songLibrary.lastModified
-//
-//        // adding tags by adding tags to songs
-//        song1.tags += "tagA"
-//        before = assertUpdated(before, songLibrary.lastModified)
-//        assertEquals(persistentHashSetOf("tagA"), songLibrary.tags)
-//
-//        song2.tags += "tagA"
-//        before = assertUpdated(before, songLibrary.lastModified)
-//        assertEquals(persistentHashSetOf("tagA"), songLibrary.tags)
-//
-//        song1.tags += "tagB"
-//        before = assertUpdated(before, songLibrary.lastModified)
-//        assertEquals(persistentHashSetOf("tagA", "tagB"), songLibrary.tags)
-//
-//        song2.tags += "tagB"
-//        before = assertUpdated(before, songLibrary.lastModified)
-//        assertEquals(persistentHashSetOf("tagA", "tagB"), songLibrary.tags)
-//
-//        // removing tags by removing tags from songs
-//        song1.tags -= "tagA"
-//        before = assertUpdated(before, songLibrary.lastModified)
-//        assertEquals(persistentHashSetOf("tagA", "tagB"), songLibrary.tags)
-//
-//        song2.tags -= "tagA"
-//        before = assertUpdated(before, songLibrary.lastModified)
-//        assertEquals(persistentHashSetOf("tagB"), songLibrary.tags)
-//
-//        song1.tags -= "tagB"
-//        before = assertUpdated(before, songLibrary.lastModified)
-//        assertEquals(persistentHashSetOf("tagB"), songLibrary.tags)
-//
-//        song2.tags -= "tagB"
-//        before = assertUpdated(before, songLibrary.lastModified)
-//        assertTrue(songLibrary.tags.isEmpty())
-//
-//        // adding and removing tags from songs at the same time
-//        song1.tags = persistentHashSetOf("tagA", "tagB")
-//        before = assertUpdated(before, songLibrary.lastModified)
-//        assertEquals(persistentHashSetOf("tagA", "tagB"), songLibrary.tags)
-//
-//        song2.tags = persistentHashSetOf("tagA", "tagC")
-//        before = assertUpdated(before, songLibrary.lastModified)
-//        assertEquals(persistentHashSetOf("tagA", "tagB", "tagC"), songLibrary.tags)
-//
-//        song1.tags = persistentHashSetOf("tagD")  // added D and removed A & B (but A gets to stay)
-//        before = assertUpdated(before, songLibrary.lastModified)
-//        assertEquals(persistentHashSetOf("tagA", "tagC", "tagD"), songLibrary.tags)
+        val songLibrary = SongLibrary()
+
+        // removing tags removes them from songs
+
 //
 //        // removing tags by removing songs
 //        songLibrary.songs -= song1

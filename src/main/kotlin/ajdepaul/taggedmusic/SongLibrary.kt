@@ -6,110 +6,96 @@ import java.time.LocalDateTime
 
 import com.google.gson.Gson
 
-class SongLibrary() {
+class SongLibrary(defaultTagType: TagType = TagType(0)) {
     
 /* ------------------------------- Properties ------------------------------- */
-
-    // observer updates
-    private val onAnyUpdate = { dat: LocalDateTime -> _lastModified = dat }
-    private val onSongTagsUpdate = { dat: Set<String> -> tags += dat.map { tag -> Pair(tag, null) } }
 
     private var _lastModified = LocalDateTime.now()
     val lastModified: LocalDateTime get() { return _lastModified }
 
-    // must be persistent set as the efficiency is relied on
-    var songs: PersistentSet<Song> = persistentHashSetOf<Song>()
-        set(value) {
-            // songs removed
-            for (song in Util.findRemoved(field, value)) {
-                // update observers
-                song.tagUpdateSubject.removeObserver(onSongTagsUpdate)
-                song.anyUpdateSubject.removeObserver(onAnyUpdate)
-            }
+    /** key: file path, value: song data */
+    val songs: Map<String, Song> get() { return _songs }
+    var _songs: PersistentMap<String, Song> = persistentHashMapOf()
 
-            // songs added
-            for (song in Util.findAdded(field, value)) {
-                // add new tags
-                tags += song.tags.filterNot { tag -> tags.contains(tag) }
-                                 .map { tag -> Pair(tag, null) }
-                // update observers
-                song.tagUpdateSubject.addObserver(onSongTagsUpdate)
-                song.anyUpdateSubject.addObserver(onAnyUpdate)
-            }
+    /** key: tag, value: tag data */
+    val tags: Map<String, Tag> get() { return _tags }
+    var _tags: PersistentMap<String, Tag> = persistentHashMapOf()
 
-            field = value
-            _lastModified = LocalDateTime.now()
-        }
-
-    // must be persistent set as the efficiency is relied on
-    /** key: tag, value: tag type name */
-    var tags: PersistentMap<String, String?> = persistentHashMapOf()
-        set(value) {
-            // if there are new tag types mapped, add them to the tagTypes set
-            tagTypes += value.filter { entry -> field[entry.key] != entry.value
-                                                && !tagTypes.keys.contains(entry.value) }
-                            // entry.value guaranteed not null
-                             .map { entry -> Pair(entry.value!!, defaultTagType.copy()) }
-            
-            // removed the tags that have been removed from each song
-            val removedTags = Util.findRemoved(field, value).map { it.key }
-            songs.forEach { it._tags -= removedTags }
-
-            field = value
-            _lastModified = LocalDateTime.now()
-        }
-
-    /** Default tag type data when either:
-     *  1. a tag name is mapped to null in the tags map, or
-     *  2. a new tag type is created indirectly by adding a tag type name to the
-     *     tags map that isn't already in the tagTypes map
+    /**
+     * key: tag type name, value: tag type data
+     * null key refers to the default tag type
      */
-    var defaultTagType = TagTypeData(0)
+    val tagTypes: Map<String?, TagType> get() { return _tagTypes }
+    var _tagTypes: PersistentMap<String?, TagType> = persistentHashMapOf<String?, TagType>()
+            .let { it + (null to defaultTagType)}   // default tag type
 
-    /** key: tag type name, value: tag type data */
-    var tagTypes: PersistentMap<String, TagTypeData> = persistentHashMapOf()
-        set(value) {
-            Util.findAdded(field, value)
-            field = value
-            _lastModified = LocalDateTime.now()
-        }
+    private inline val defaultTagType: TagType
+        get() { return tagTypes[null] ?: error("Default tag type not in tagTypes[null]") }
 
 /* -------------------------------- Functions ------------------------------- */
 
+    fun addSong(songPath: String, song: Song) {
+        _songs += songPath to song
+        // add new tags
+        _tags += song.tags.filterNot { tags.contains(it) }
+                          .map { it to Tag(null, null) }
+    }
+
+    fun removeSong(songPath: String) { _songs -= songPath }
+
+    fun addTag(tagName: String, tag: Tag) {
+        _tags += tagName to tag
+        // add new tag type
+        if (tag.type !in tagTypes) { _tagTypes += tag.type to defaultTagType }
+    }
+
+    fun removeTag(tagName: String) {
+        _tags -= tagName
+        // remove tag from songs
+        for ((key, song) in songs) {
+            _songs += key to (song.mutate(tags=song.tags - tagName))
+        }
+    }
+
+    fun addTagType(tagTypeName: String, tagType: TagType) { _tagTypes += tagTypeName to tagType }
+
+    fun removeTagType(tagTypeName: String) {
+        _tagTypes -= tagTypeName
+        // remove tag type from tags
+        for ((key, tag) in tags) {
+            if (tag.type == tagTypeName) { _tags += key to (tag.mutate(type=null)) }
+        }
+    }
+
     /**
-     * @param inclTags songs must include these tag names
-     * @param exclTags songs cannot have these tag names
+     * Returns a map of songs according to the provided filters.
+     *
+     * @param inclTags songs must have all of these tags
+     * @param exclTags songs cannot have any of these tags
      */
-    fun tagFilter(inclTags: Set<String>, exclTags: Set<String>): Set<Song> {
-        return songs.filter { song -> song.tags.containsAll(inclTags) }
-                    .filterNot { song -> song.tags.any { tag -> exclTags.contains(tag) }}.toSet()
+    fun tagFilter(inclTags: Set<String>, exclTags: Set<String>): Map<String, Song> {
+        return songs.filter { it.value.tags.containsAll(inclTags) }
+                    .filterNot { it.value.tags.any { tag -> exclTags.contains(tag) }}
     }
 
 /* ---------------------------------- JSON ---------------------------------- */
 
     /** Save song library as JSON */
     internal fun toJson(): String {
-        return Gson().toJson(
-            JsonData(_lastModified.toString()))
+        return Gson().toJson(JsonData(lastModified.toString(), songs, tags, tagTypes))
     }
 
-    companion object {
-
-        /** Load song library from JSON */
-        internal fun fromJson(json: String): SongLibrary {
-
-            val jsonData = Gson().fromJson(json, JsonData::class.java)
-
-            return SongLibrary().apply {
-                _lastModified = LocalDateTime.parse(jsonData.last_modified)
-                // _tags = songs.flatMap { song -> song.tags }.toPersistentHashSetOf()
-            }
-        }
+    /** Load song library from JSON */
+    constructor(json: String) : this() {
+        val jsonData = Gson().fromJson(json, JsonData::class.java)
+        _lastModified = LocalDateTime.parse(jsonData.lastModified)
+        _songs        = jsonData.songs.toPersistentHashMap()
+        _tags         = jsonData.tags.toPersistentHashMap()
+        _tagTypes     = jsonData.tagTypes.toPersistentHashMap()
     }
 
-    private data class JsonData(val last_modified: String)
+    private data class JsonData(val lastModified: String,
+                                val songs:         Map<String, Song>,
+                                val tags:          Map<String, Tag>,
+                                val tagTypes:      Map<String?, TagType>)
 }
-
-/* ------------------------------ Tag Type Data ----------------------------- */
-
-data class TagTypeData(val color: Int)
