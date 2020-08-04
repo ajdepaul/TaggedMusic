@@ -1,5 +1,6 @@
 package ajdepaul.taggedmusic
 
+import kotlinx.collections.immutable.PersistentSet
 import kotlinx.collections.immutable.persistentHashSetOf
 import java.time.LocalDateTime
 
@@ -9,26 +10,25 @@ import java.time.LocalDateTime
 
 data class Song internal constructor(
         val title:        String,
-        val duration:     Long,
-        val artist:       String?       = null,
-        val album:        String?       = null,
-        val trackNum:     Int?          = null,
-        val year:         Int?          = null,
-        val lastModified: LocalDateTime = LocalDateTime.now(),
-        val playCount:    Int           = 0,
-        val tags:         Set<String>   = persistentHashSetOf()) {
+        val duration:     Int,
+        val artist:       String?               = null,
+        val album:        String?               = null,
+        val trackNum:     Int?                  = null,
+        val year:         Int?                  = null,
+        val lastModified: LocalDateTime         = LocalDateTime.now(),
+        val playCount:    Int                   = 0,
+        val tags:         PersistentSet<String> = persistentHashSetOf()) {
 
-    fun mutate(title:              String      = this.title,
-               duration:           Long        = this.duration,
-               artist:             String?     = this.artist,
-               album:              String?     = this.album,
-               trackNum:           Int?        = this.trackNum,
-               year:               Int?        = this.year,
-               playCount:          Int         = this.playCount,
-               tags:               Set<String> = this.tags,
-               updateLastModified: Boolean     = true
+    fun mutate(title:              String                = this.title,
+               duration:           Int                   = this.duration,
+               artist:             String?               = this.artist,
+               album:              String?               = this.album,
+               trackNum:           Int?                  = this.trackNum,
+               year:               Int?                  = this.year,
+               playCount:          Int                   = this.playCount,
+               tags:               PersistentSet<String> = this.tags,
+               updateLastModified: Boolean               = true
     ): Song {
-
         return if (updateLastModified)
             Song(title, duration, artist, album, trackNum, year, LocalDateTime.now(), playCount, tags)
         else Song(title, duration, artist, album, trackNum, year, lastModified, playCount, tags)
@@ -37,14 +37,13 @@ data class Song internal constructor(
 
 /* ----------------------------------- Tag ---------------------------------- */
 
-data class Tag(val description: String? = null,
-               val type:        String?) {
+data class Tag(val type: String?,
+               val description: String? = null) {
 
-    fun mutate(description: String? = this.description,
-               type:     String? = this.type
-            ): Tag {
-
-        return Tag(description, type)
+    internal fun mutate(type:        String? = this.type,
+                        description: String? = this.description
+    ): Tag {
+        return Tag(type, description)
     }
 }
 
@@ -52,7 +51,7 @@ data class Tag(val description: String? = null,
 
 data class TagType(val color: Int) {
 
-    fun mutate(color: Int = this.color): TagType {
+    internal fun mutate(color: Int = this.color): TagType {
         return TagType(color)
     }
 }

@@ -34,7 +34,7 @@ class SongLibrary(defaultTagType: TagType = TagType(0)) {
 
 /* -------------------------------- Functions ------------------------------- */
 
-    fun addSong(songPath: String, song: Song) {
+    fun putSong(songPath: String, song: Song) {
         _songs += songPath to song
         // add new tags
         _tags += song.tags.filterNot { tags.contains(it) }
@@ -43,7 +43,7 @@ class SongLibrary(defaultTagType: TagType = TagType(0)) {
 
     fun removeSong(songPath: String) { _songs -= songPath }
 
-    fun addTag(tagName: String, tag: Tag) {
+    fun putTag(tagName: String, tag: Tag) {
         _tags += tagName to tag
         // add new tag type
         if (tag.type !in tagTypes) { _tagTypes += tag.type to defaultTagType }
@@ -57,7 +57,7 @@ class SongLibrary(defaultTagType: TagType = TagType(0)) {
         }
     }
 
-    fun addTagType(tagTypeName: String, tagType: TagType) { _tagTypes += tagTypeName to tagType }
+    fun putTagType(tagTypeName: String, tagType: TagType) { _tagTypes += tagTypeName to tagType }
 
     fun removeTagType(tagTypeName: String) {
         _tagTypes -= tagTypeName
