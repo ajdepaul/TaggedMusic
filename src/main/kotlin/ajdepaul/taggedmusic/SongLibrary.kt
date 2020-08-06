@@ -3,6 +3,8 @@ package ajdepaul.taggedmusic
 import java.time.LocalDateTime
 import kotlinx.collections.immutable.*
 
+const val JSON_VERSION = "1.0"
+
 class SongLibrary(defaultTagType: TagType) {
     
 /* ------------------------------- Properties ------------------------------- */
@@ -105,6 +107,7 @@ class SongLibrary(defaultTagType: TagType) {
 
     fun toJsonData(): JsonData {
         return JsonData(
+                JSON_VERSION,
                 lastModified.toString(),
                 songs.map { it.key to it.value.toJsonData() }.toMap(),
                 tags,
@@ -114,11 +117,12 @@ class SongLibrary(defaultTagType: TagType) {
     }
 
     data class JsonData internal constructor(
-            val lastModified: String,
-            val songs: Map<String, Song.JsonData>,
-            val tags: Map<String, Tag>,
-            val tagTypes: Map<String, TagType>,
-            val defaultTagType: TagType
+            val jsonVersion: String,
+            private val lastModified: String,
+            private val songs: Map<String, Song.JsonData>,
+            private val tags: Map<String, Tag>,
+            private val tagTypes: Map<String, TagType>,
+            private val defaultTagType: TagType
     ) {
 
         fun toSongLibrary(): SongLibrary {
