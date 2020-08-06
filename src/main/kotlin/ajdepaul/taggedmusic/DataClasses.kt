@@ -32,7 +32,7 @@ data class Song private constructor(
 
     // Mutations
 
-    /** Returns a new [Song] with the the changes from [mutator] applied */
+    /** Returns a new [Song] with the the changes from [mutator] applied. */
     fun mutate(updateLastModified: Boolean = true, mutator: MutableSong.() -> Unit): Song {
         return MutableSong(this).apply(mutator).build(updateLastModified)
     }
@@ -73,7 +73,7 @@ data class Song private constructor(
 
 data class Tag(val type: String?, val description: String? = null) {
 
-    /** Returns a new [Tag] with the the changes from [mutator] applied */
+    /** Returns a new [Tag] with the the changes from [mutator] applied. */
     fun mutate(mutator: MutableTag.() -> Unit): Tag {
         return MutableTag(this).apply(mutator).build()
     }
@@ -92,7 +92,7 @@ data class Tag(val type: String?, val description: String? = null) {
 
 data class TagType(val color: Int) {
 
-    /** Returns a new [TagType] with the the changes from [mutator] applied */
+    /** Returns a new [TagType] with the the changes from [mutator] applied. */
     fun mutate(mutator: MutableTagType.() -> Unit): TagType {
         return MutableTagType(this).apply(mutator).build()
     }

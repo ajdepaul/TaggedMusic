@@ -93,12 +93,12 @@ class SongLibrary(defaultTagType: TagType) {
     /**
      * Returns a map of songs according to the provided filters.
      *
-     * @param inclTags songs must have all of these tags
-     * @param exclTags songs cannot have any of these tags
+     * @param includeTags songs must have all of these tags
+     * @param excludeTags songs cannot have any of these tags
      */
-    fun tagFilter(inclTags: Set<String>, exclTags: Set<String>): Map<String, Song> {
-        return songs.filter { it.value.tags.containsAll(inclTags) }
-                .filterNot { it.value.tags.any { tag -> exclTags.contains(tag) }}
+    fun tagFilter(includeTags: Set<String> = setOf(), excludeTags: Set<String> = setOf()): Map<String, Song> {
+        return songs.filter { it.value.tags.containsAll(includeTags) }
+                .filterNot { it.value.tags.any { tag -> excludeTags.contains(tag) }}
     }
 
 /* ---------------------------------- JSON ---------------------------------- */
