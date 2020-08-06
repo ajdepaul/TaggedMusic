@@ -1,10 +1,9 @@
 package ajdepaul.taggedmusic
 
+import java.time.LocalDateTime
 import kotlinx.collections.immutable.*
 
-import java.time.LocalDateTime
-
-class SongLibrary(defaultTagType: TagType = TagType(0)) {
+class SongLibrary(defaultTagType: TagType) {
     
 /* ------------------------------- Properties ------------------------------- */
 
@@ -38,41 +37,57 @@ class SongLibrary(defaultTagType: TagType = TagType(0)) {
     fun putSong(fileName: String, song: Song) {
         fileName.ifBlank { return }
         _songs += fileName to song
+
         // add new tags
         _tags += song.tags.filterNot { tags.contains(it) }
                 .map { it to Tag(null, null) }
+
+        _lastModified = LocalDateTime.now()
     }
 
-    fun removeSong(fileName: String) { _songs -= fileName }
+    fun removeSong(fileName: String) {
+        _songs -= fileName
+        _lastModified = LocalDateTime.now()
+    }
 
     /** @param tagName if blank, no change is made */
     fun putTag(tagName: String, tag: Tag) {
         tagName.ifBlank { return }
         _tags += tagName to tag
+
         // add new tag type
         if (tag.type !in tagTypes) { _tagTypes += tag.type to defaultTagType }
+
+        _lastModified = LocalDateTime.now()
     }
 
     fun removeTag(tagName: String) {
         _tags -= tagName
+
         // remove tag from songs
         for ((key, song) in songs) {
-            _songs += key to (song.mutate(tags = song.tags - tagName))
+            _songs += key to (song.mutate { tags -= tagName })
         }
+
+        _lastModified = LocalDateTime.now()
     }
 
     /** @param tagTypeName if blank, no change is made */
     fun putTagType(tagTypeName: String, tagType: TagType) {
         tagTypeName.ifBlank { return }
         _tagTypes += tagTypeName to tagType
+        _lastModified = LocalDateTime.now()
     }
 
     fun removeTagType(tagTypeName: String) {
         _tagTypes -= tagTypeName
+
         // remove tag type from tags
         for ((key, tag) in tags) {
-            if (tag.type == tagTypeName) { _tags += key to (tag.mutate(type = null)) }
+            if (tag.type == tagTypeName) { _tags += key to (tag.mutate { type = null }) }
         }
+
+        _lastModified = LocalDateTime.now()
     }
 
     /**
@@ -107,12 +122,11 @@ class SongLibrary(defaultTagType: TagType = TagType(0)) {
     ) {
 
         fun toSongLibrary(): SongLibrary {
-            return SongLibrary().apply {
+            return SongLibrary(this@JsonData.defaultTagType).apply {
+                _songs += this@JsonData.songs.map { it.key to it.value.toSong() }
+                _tags += this@JsonData.tags
+                _tagTypes += this@JsonData.tagTypes.map { (it.key as String?) to it.value }
                 _lastModified = LocalDateTime.parse(this@JsonData.lastModified)
-                _songs = this@JsonData.songs.map { it.key to it.value.toSong() }.toMap().toPersistentHashMap()
-                _tags = this@JsonData.tags.toPersistentHashMap()
-                _tagTypes = this@JsonData.tagTypes.map { (it.key as String?) to it.value }.toMap().toPersistentHashMap()
-                _tagTypes += null to this@JsonData.defaultTagType
             }
         }
     }

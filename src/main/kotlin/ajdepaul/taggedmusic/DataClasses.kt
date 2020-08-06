@@ -1,39 +1,62 @@
 package ajdepaul.taggedmusic
 
-import kotlinx.collections.immutable.PersistentSet
-import kotlinx.collections.immutable.persistentHashSetOf
-import kotlinx.collections.immutable.toPersistentHashSet
 import java.time.LocalDateTime
+import kotlinx.collections.immutable.*
 
 /* ---------------------------------- Song ---------------------------------- */
 
 /** Cannot be converted to json directly. Use [toJsonData] for a json friendly format. */
-data class Song(
+data class Song private constructor(
         val title: String,
         val duration: Int,
-        val artist: String? = null,
-        val album: String? = null,
-        val trackNum: Int? = null,
-        val year: Int? = null,
-        val lastModified: LocalDateTime = LocalDateTime.now(),
-        val playCount: Int = 0,
-        val tags: PersistentSet<String> = persistentHashSetOf()
+        val artist: String?,
+        val album: String?,
+        val trackNum: Int?,
+        val year: Int?,
+        val lastModified: LocalDateTime,
+        val playCount: Int,
+        val tags: PersistentSet<String>
 ) {
+    // second constructor allows tags to be passed as a generic set
+    constructor(
+            title: String,
+            duration: Int,
+            artist: String? = null,
+            album: String? = null,
+            trackNum: Int? = null,
+            year: Int? = null,
+            lastModified: LocalDateTime = LocalDateTime.now(),
+            playCount: Int = 0,
+            tags: Set<String> = persistentHashSetOf()
+    ) : this(title, duration, artist, album, trackNum, year, lastModified, playCount, tags.toPersistentHashSet())
 
-    fun mutate(
-            title: String = this.title,
-            duration: Int = this.duration,
-            artist: String? = this.artist,
-            album: String? = this.album,
-            trackNum: Int? = this.trackNum,
-            year: Int? = this.year,
-            playCount: Int = this.playCount,
-            tags: PersistentSet<String> = this.tags,
-            updateLastModified: Boolean = true
-    ): Song {
-        return if (updateLastModified)
-            Song(title, duration, artist, album, trackNum, year, LocalDateTime.now(), playCount, tags)
-        else Song(title, duration, artist, album, trackNum, year, lastModified, playCount, tags)
+    // Mutations
+
+    /** Returns a new [Song] with the the changes from [mutator] applied */
+    fun mutate(updateLastModified: Boolean = true, mutator: MutableSong.() -> Unit): Song {
+        return MutableSong(this).apply(mutator).build(updateLastModified)
+    }
+
+    data class MutableSong internal constructor(private val song: Song) {
+        var title: String = song.title
+        var duration: Int = song.duration
+        var artist: String? = song.artist
+        var album: String? = song.album
+        var trackNum: Int? = song.trackNum
+        var year: Int? = song.year
+        var playCount: Int = song.playCount
+        var tags: PersistentSet<String> = song.tags
+
+        internal fun build(updateLastModified: Boolean): Song {
+            return Song(title, duration, artist, album, trackNum, year,
+                    if(updateLastModified) LocalDateTime.now() else song.lastModified, playCount, tags)
+        }
+    }
+
+    // JSON
+
+    internal fun toJsonData(): JsonData {
+        return JsonData(title, duration, artist, album, trackNum, year, lastModified.toString(), playCount, tags)
     }
 
     data class JsonData internal constructor(val title: String, val duration: Int, val artist: String?, val album: String?,
@@ -44,18 +67,24 @@ data class Song(
                     this.year, LocalDateTime.parse(this.lastModified), this.playCount, this.tags.toPersistentHashSet())
         }
     }
-
-    internal fun toJsonData(): JsonData {
-        return JsonData(title, duration, artist, album, trackNum, year, lastModified.toString(), playCount, tags)
-    }
 }
 
 /* ----------------------------------- Tag ---------------------------------- */
 
 data class Tag(val type: String?, val description: String? = null) {
 
-    fun mutate(type: String? = this.type, description: String? = this.description): Tag {
-        return Tag(type, description)
+    /** Returns a new [Tag] with the the changes from [mutator] applied */
+    fun mutate(mutator: MutableTag.() -> Unit): Tag {
+        return MutableTag(this).apply(mutator).build()
+    }
+
+    data class MutableTag internal constructor(private val tag: Tag) {
+        var type: String? = tag.type
+        var description: String? = tag.description
+
+        internal fun build(): Tag {
+            return Tag(type, description)
+        }
     }
 }
 
@@ -63,7 +92,16 @@ data class Tag(val type: String?, val description: String? = null) {
 
 data class TagType(val color: Int) {
 
-    fun mutate(color: Int = this.color): TagType {
-        return TagType(color)
+    /** Returns a new [TagType] with the the changes from [mutator] applied */
+    fun mutate(mutator: MutableTagType.() -> Unit): TagType {
+        return MutableTagType(this).apply(mutator).build()
+    }
+
+    data class MutableTagType internal constructor(private val tagType: TagType) {
+        var color: Int = tagType.color
+
+        internal fun build(): TagType {
+            return TagType(color)
+        }
     }
 }

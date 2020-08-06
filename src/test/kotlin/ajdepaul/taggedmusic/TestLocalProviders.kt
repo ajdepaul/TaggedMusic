@@ -1,9 +1,14 @@
 package ajdepaul.taggedmusic
 
-import com.google.gson.Gson
-import kotlinx.collections.immutable.persistentHashSetOf
+import kotlin.test.Test
+import kotlin.test.assertTrue
+import kotlin.test.assertNotNull
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import java.io.File
-import kotlin.test.*
+import kotlinx.collections.immutable.*
+import com.google.gson.Gson
 
 class TestLocalProviders {
 
@@ -18,7 +23,7 @@ class TestLocalProviders {
                 1000,
                 "artist",
                 tags = persistentHashSetOf("A", "B"))
-        val songLibrary = SongLibrary().apply {
+        val songLibrary = SongLibrary(TagType(0)).apply {
             this.defaultTagType = TagType(1)
             this.putSong("file.mp3", song)
             this.putTag("C", Tag("type1", "description"))
