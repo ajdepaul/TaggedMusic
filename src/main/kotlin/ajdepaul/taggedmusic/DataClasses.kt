@@ -71,7 +71,7 @@ data class Song private constructor(
 
 /* ----------------------------------- Tag ---------------------------------- */
 
-data class Tag(val type: String?, val description: String? = null) {
+data class Tag(val type: String? = null, val description: String? = null) {
 
     /** Returns a new [Tag] with the the changes from [mutator] applied. */
     fun mutate(mutator: MutableTag.() -> Unit): Tag {

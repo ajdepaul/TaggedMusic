@@ -13,7 +13,7 @@ import com.google.gson.JsonSyntaxException
 
 interface LibraryProvider {
 
-    /** @return the requested song library (null if failed) */
+    /** @return the song library associated with this provider or null if failed */
     fun pull(): SongLibrary?
 
     /**
@@ -25,6 +25,10 @@ interface LibraryProvider {
 
 interface SongProvider {
 
+    /**
+     * @param fileName the song file name to search for
+     * @return if the song provider has the song available to pull
+     */
     fun hasSong(fileName: String): Boolean
 
     /**
@@ -33,13 +37,11 @@ interface SongProvider {
      */
     fun pushSong(songPath: String, fileName: String): Boolean
 
-    /** @return the local path to the song (null if failed) */
+    /** @return the local path to the song or null if failed */
     fun pullSong(fileName: String): String?
 
     /** @return true if success, false if failed */
     fun removeSong(fileName: String): Boolean
-
-
 }
 
 /* ----------------------------- Local Provider ----------------------------- */

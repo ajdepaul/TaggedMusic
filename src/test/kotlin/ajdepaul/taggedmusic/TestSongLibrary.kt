@@ -37,31 +37,31 @@ class TestSongLibrary {
         songLibrary.putSong("song2.mp3", song2)
         before = assertUpdated(before, songLibrary.lastModified)
         assertEquals(mapOf("song1.mp3" to song1, "song2.mp3" to song2), songLibrary.songs)
-        assertEquals(mapOf("A" to Tag(null, null)), songLibrary.tags)
+        assertEquals(mapOf("A" to Tag()), songLibrary.tags)
 
         // modifying songs
         song1 = song1.mutate { tags += "B" }
         songLibrary.putSong("song1.mp3", song1)
         before = assertUpdated(before, songLibrary.lastModified)
         assertEquals(mapOf("song1.mp3" to song1, "song2.mp3" to song2), songLibrary.songs)
-        assertEquals(mapOf("A" to Tag(null, null), "B" to Tag(null, null)), songLibrary.tags)
+        assertEquals(mapOf("A" to Tag(), "B" to Tag()), songLibrary.tags)
 
         song2 = song2.mutate { playCount += + 1 }
         songLibrary.putSong("song2.mp3", song2)
         before = assertUpdated(before, songLibrary.lastModified)
         assertEquals(mapOf("song1.mp3" to song1, "song2.mp3" to song2), songLibrary.songs)
-        assertEquals(mapOf("A" to Tag(null, null), "B" to Tag(null, null)), songLibrary.tags)
+        assertEquals(mapOf("A" to Tag(), "B" to Tag()), songLibrary.tags)
 
         // removing songs
         songLibrary.removeSong("song1.mp3")
         before = assertUpdated(before, songLibrary.lastModified)
         assertEquals(mapOf("song2.mp3" to song2), songLibrary.songs)
-        assertEquals(mapOf("A" to Tag(null, null), "B" to Tag(null, null)), songLibrary.tags)
+        assertEquals(mapOf("A" to Tag(), "B" to Tag()), songLibrary.tags)
 
         songLibrary.removeSong("song2.mp3")
         assertUpdated(before, songLibrary.lastModified)
         assertTrue(songLibrary.songs.isEmpty())
-        assertEquals(mapOf("A" to Tag(null, null), "B" to Tag(null, null)), songLibrary.tags)
+        assertEquals(mapOf("A" to Tag(), "B" to Tag()), songLibrary.tags)
     }
 
     @Test fun testTagsModifications() {
@@ -69,7 +69,7 @@ class TestSongLibrary {
         var before = songLibrary.lastModified
 
         // adding songs
-        var tag1 = Tag(null, null)
+        var tag1 = Tag()
         songLibrary.putTag("tag1", tag1)
         before = assertUpdated(before, songLibrary.lastModified)
         assertEquals(mapOf("tag1" to tag1), songLibrary.tags)

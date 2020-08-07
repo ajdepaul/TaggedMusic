@@ -99,18 +99,18 @@ class TestDataClasses {
     }
 
     @Test fun testTagMutate() {
-        var tag = Tag("type")
-        assertEquals("type", tag.type)
+        var tag = Tag()
+        assertEquals(null, tag.type)
         assertEquals(null, tag.description)
 
-        tag = tag.mutate { type = "type2" }
-        assertEquals("type2", tag.type)
+        tag = tag.mutate { type = "type" }
+        assertEquals("type", tag.type)
 
         tag = tag.mutate { description = "description" }
         assertEquals("description", tag.description)
 
-        tag = tag.mutate { type = "type3"; description = "description2" }
-        assertEquals("type3", tag.type)
+        tag = tag.mutate { type = "type2"; description = "description2" }
+        assertEquals("type2", tag.type)
         assertEquals("description2", tag.description)
     }
 
