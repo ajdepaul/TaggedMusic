@@ -1,0 +1,36 @@
+{
+  "jsonVersion": "1.0",
+  "lastModified": "2020-08-07T22:13:00.279576",
+  "songs": {
+    "file.mp3": {
+      "title": "title",
+      "duration": 1000,
+      "artist": "artist",
+      "lastModified": "2020-08-07T22:13:00.271945",
+      "playCount": 0,
+      "tags": [
+        "A",
+        "B"
+      ]
+    }
+  },
+  "tags": {
+    "A": {},
+    "B": {},
+    "C": {
+      "type": "type1",
+      "description": "description"
+    }
+  },
+  "tagTypes": {
+    "type1": {
+      "color": 1
+    },
+    "type2": {
+      "color": 2
+    }
+  },
+  "defaultTagType": {
+    "color": 1
+  }
+}
