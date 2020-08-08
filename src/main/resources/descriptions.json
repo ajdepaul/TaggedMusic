@@ -1,0 +1,39 @@
+{
+    "shortDescriptions": [
+        "list (l)       Lists all available commands.",
+        "new (n)        Create a new library-provider, song-provider, library, song, tag, or tag type.",
+        "lib-prov (lp)  Modify the currently loaded library provider.",
+        "song-prov (sp) Modify the currently loaded song provider.",
+        "library (b)    Modify the currently loaded library.",
+        "song (s)       Modify the currently loaded song.",
+        "tag (t)        Modify the currently loaded tag.",
+        "tag-type (tt)  Modify the currently loaded tag type.",
+        "unload (u)     Unloads either the currently loaded library-provider, song-provider, library, song, tag, or tag type.",
+        "help (h)       Displays help for a specified command.",
+        "quit (q)       Exits Tagged Music CLI."
+    ],
+    "fullDescriptions": {
+        "list": [
+            "Usage: list",
+            "Lists all available commands."
+        ],
+        "new": [
+            "Usage: new [type]",
+            "Types: library-provider, song-provider, library, song, tag, tag-type",
+            "",
+            "Runs a wizard to create and load a new instance of the specified [type].",
+            "Only one instance of each type can be loaded for modification at a given time. By creating a new one, the previous will be overwritten."
+        ],
+        "song-library": [
+
+        ],
+        "help": [
+            "Usage: help [command]",
+            "Displays help for the specified command."
+        ],
+        "quit": [
+            "Usage: quit",
+            "Exits Tagged Music CLI"
+        ]
+    }
+}

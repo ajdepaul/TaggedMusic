@@ -1,5 +1,15 @@
-# Ignore Gradle project-specific cache directory
 .gradle
-
-# Ignore Gradle build output directory
 build
+test
+lib/TaggedMusic.jar
+
+.idea
+*.iml
+*.ipr
+*.iws
+.project
+out
+
+.classpath
+.settings
+bin
