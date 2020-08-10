@@ -1,38 +1,105 @@
 {
     "shortDescriptions": [
-        "list (l)       Lists all available commands.",
-        "new (n)        Create a new library-provider, song-provider, library, song, tag, or tag type.",
-        "lib-prov (lp)  Modify the currently loaded library provider.",
-        "song-prov (sp) Modify the currently loaded song provider.",
-        "library (b)    Modify the currently loaded library.",
-        "song (s)       Modify the currently loaded song.",
-        "tag (t)        Modify the currently loaded tag.",
-        "tag-type (tt)  Modify the currently loaded tag type.",
-        "unload (u)     Unloads either the currently loaded library-provider, song-provider, library, song, tag, or tag type.",
-        "help (h)       Displays help for a specified command.",
-        "quit (q)       Exits Tagged Music CLI."
+        "Command (shortened)     Description",
+        "list (ls)               Lists all available commands.",
+        "new (n)                 Create and load a new library-provider, song-provider, library, song, tag, or tag type.",
+        "queue (q)               WIP",
+        "library-provider (lp)   Push or pull libraries on the loaded library provider or modify its settings.",
+        "song-provider (sp)      Add, remove, or check songs on the loaded song provider or modify its settings.",
+        "library (l)             WIP",
+        "song (s)                WIP",
+        "tag (t)                 WIP",
+        "tag-type (tt)           WIP",
+        "help (h)                Displays help for a specified command.",
+        "quit (q)                Exits Tagged Music CLI."
     ],
     "fullDescriptions": {
         "list": [
-            "Usage: list",
+            "Usage: list (ls)",
             "Lists all available commands."
         ],
         "new": [
-            "Usage: new [type]",
-            "Types: library-provider, song-provider, library, song, tag, tag-type",
+            "Usage: new (n) [type]",
+            "Types: library-provider (lp), song-provider (sp), library (l), song (s), tag, tag-type (tt)",
             "",
-            "Runs a wizard to create and load a new instance of the specified [type].",
-            "Only one instance of each type can be loaded for modification at a given time. By creating a new one, the previous will be overwritten."
+            "Runs a wizard to create and load a new instance of the specified [type]. A brief description for each type can be found with \"help [type]\". Only one instance of each type can be loaded for modification at a given time. By creating a new one, the previous will be overwritten."
         ],
-        "song-library": [
+        "queue": [
+            "Usage: queue (q) [command]",
+            "Commands:",
+            "    ",
+            "    play (p)    ",
+            "    clear (c)   WIP"
+        ],
+        "library-provider": [
+            "Usage: library-provider (lp) [command]",
+            "",
+            "The library provider is used to store a file that contains all the information about a library. By pushing to the library provider, the previously pushed library is updated and can be retrieved again using pull.",
+            "",
+            "Commands:",
+            "    push (s)    Pushes the loaded library to the loaded library provider.",
+            "    pull (l)    Pulls the library from the provider and loads it, overwriting the previously loaded one.",
+            "    modify (m)  Modify any provider specific settings."
+        ],
+        "song-provider": [
+            "Usage: song-provider [command]",
+            "",
+            "The song provider is used to store all songs in a library in one place. When a song is played, the song file must first be pulled from the song provider by its file name identifier.",
+            "",
+            "Commands:",
+            "    has (h) [file name]     Checks if the provider has the song available to pull.",
+            "    push (s) [song path]    Pushes the song file to the provider to be pulled later.",
+            "    remove (r) [file name]  Removes the song from the provider.",
+            "    modify (m)              Modify any provider specific settings."
+        ],
+        "library": [
+            "Usage: library (l) [command]",
+            "",
+            "The song library stores all of a user's customized information about their songs, tags, and tag types. Each is stored as a key-value pair map:",
+            "Map         Key         Value",
+            "Songs       file name   song data",
+            "Tags        tag name    tag data",
+            "Tag types   type name   type data",
+            "The word identifier used below refers to the key in that types map. For example, an identifier for a song may be\"song.mp3\".",
 
+            "Commands:",
+            "    load (l) [type] [identifier]      Load one of the three main types (song, tag, tag-type) from the library for modification.",
+            "    put (p) [type] [identifier]       Adds or updates the specified type (song, tag, tag-type) into the library with the identifier as the key.",
+            "    remove (r) [type] [identifier]    Removes an entry from the specified type (song, tag, tag-type) map that uses the specified identifier.",
+            "    filter (f)                        Asks for a list of tags that songs MUST have and for a list of tags that song CANNOT have. Songs are filtered out from the library that match the criteria and added to the song queue.",
+            "    display (d) [type]                Displays entries of the map for the specified type (song, tag, tag-type) ten lines at a time."
+        ],
+        "song": [
+            "WIP",
+            "Commands:",
+            "    clear (c) [property]           Removable properties include: artist, album, track number, year",
+            "    title (t) <new>",
+            "    duration (d)",
+            "    artist (a) <new>",
+            "    album (al) <new>",
+            "    track-number (tn) <new>",
+            val title: String,
+            val duration: Int,
+            val artist: String?,
+            val album: String?,
+            val trackNum: Int?,
+            val year: Int?,
+            val lastModified: LocalDateTime,
+            val playCount: Int,
+            val tags: PersistentSet<String>
+        ],
+        "tag": [
+            "WIP"
+        ],
+        "tag-type": [
+            "WIP"
         ],
         "help": [
-            "Usage: help [command]",
-            "Displays help for the specified command."
+            "Usage: help (h) [command]",
+            "Displays help for the specified command. Shortened equivalent command usage presented in parentheses."
         ],
         "quit": [
-            "Usage: quit",
+            "Usage: quit (q)",
             "Exits Tagged Music CLI"
         ]
     }

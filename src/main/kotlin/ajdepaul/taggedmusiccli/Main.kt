@@ -1,10 +1,7 @@
 
 package ajdepaul.taggedmusiccli
 
-import ajdepaul.taggedmusic.LibraryProvider
-import ajdepaul.taggedmusic.SongLibrary
-import ajdepaul.taggedmusic.SongProvider
-import ajdepaul.taggedmusic.TagType
+import ajdepaul.taggedmusic.*
 import com.google.gson.Gson
 import kotlinx.collections.immutable.*
 import java.io.File
@@ -29,9 +26,12 @@ class CLI {
     // used for help command
     val fullDescriptions = descriptions.fullDescriptions
 
-    var songLibrary: SongLibrary? = null
     var libraryProvider: LibraryProvider? = null
     var songProvider: SongProvider? = null
+    var songLibrary: SongLibrary? = null
+    var song: Song? = null
+    var tag: Tag? = null
+    var tagType: TagType? = null
 
     fun run() {
 
@@ -73,12 +73,12 @@ class CLI {
         }
 
         when (input[1]) {
-            "library-provider" -> newLibraryProvider()
-            "song-provider" -> newSongProvider()
-            "library" -> newLibrary()
-            "song" -> newSong()
-            "tag" -> newTag()
-            "tag-type" -> newTagType()
+            "library-provider", "lp" -> newLibraryProvider()
+            "song-provider", "sp" -> newSongProvider()
+            "library", "l" -> newLibrary()
+            "song", "s" -> newSong()
+            "tag", "t" -> newTag()
+            "tag-type", "tt" -> newTagType()
             else -> println("Not a type. Use \"help new\" to list types.")
         }
     }
