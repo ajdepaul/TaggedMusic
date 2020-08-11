@@ -33,7 +33,7 @@ dependencies {
     implementation 'org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.2'
 
     // https://github.com/ajdepaul/TaggedMusic
-    compile files('lib/TaggedMusic.jar')
+    compile files('lib/TaggedMusic-1.0.1.jar')
 }
 
 application {
