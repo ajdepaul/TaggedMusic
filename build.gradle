@@ -30,3 +30,7 @@ dependencies {
     // https://github.com/Kotlin/kotlinx.collections.immutable
     implementation 'org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.2'
 }
+
+jar {
+    version = "1.0.1"
+}
