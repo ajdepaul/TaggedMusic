@@ -46,7 +46,7 @@ interface SongProvider {
 
 /* ----------------------------- Local Provider ----------------------------- */
 
-class LocalLibraryProvider(private val libraryPath: String) : LibraryProvider {
+class LocalLibraryProvider(var libraryPath: String) : LibraryProvider {
 
     override fun pull(): SongLibrary? {
         return try { File(libraryPath).reader().use { Gson().fromJson(it, SongLibrary.JsonData::class.java).toSongLibrary() }}
@@ -63,7 +63,7 @@ class LocalLibraryProvider(private val libraryPath: String) : LibraryProvider {
     }
 }
 
-class LocalSongProvider(private val songDirectory: String) : SongProvider {
+class LocalSongProvider(var songDirectory: String) : SongProvider {
 
     override fun hasSong(fileName: String): Boolean {
         return File(songDirectory).resolve(fileName).isFile
