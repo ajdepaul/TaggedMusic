@@ -4,20 +4,19 @@ package ajdepaul.taggedmusiccli
 import ajdepaul.taggedmusic.*
 import com.google.gson.Gson
 import kotlinx.collections.immutable.*
-import java.io.File
 
 fun main(args: Array<String>) {
     CLI().run()
 }
 
-class CLI {
+private class CLI {
 
     val initialMessage = """
         --- Tagged Music CLI ---
         Use "list" to list all commands.
     """.trimIndent()
 
-    val prompt = " > "
+    val prompt = "> "
 
     val descriptions: DescriptionsData =
             Gson().fromJson(CLI::class.java.getResource("/descriptions.json").readText(), DescriptionsData::class.java)
@@ -29,16 +28,11 @@ class CLI {
     var libraryProvider: LibraryProvider? = null
     var songProvider: SongProvider? = null
     var songLibrary: SongLibrary? = null
-    var song: Song? = null
-    var tag: Tag? = null
-    var tagType: TagType? = null
+    var songQueue: ImmutableList<Pair<String, Song>>? = null
 
     fun run() {
 
-        println("""
-            --- Tagged Music CLI ---
-            Use "list" to see available commands.
-        """.trimIndent())
+        println(initialMessage)
 
         var running = true
         while (running) {
@@ -48,13 +42,22 @@ class CLI {
             when (input[0]) {
                 "list", "l" -> list(input)
                 "help", "h" -> help(input)
-                "new", "n" -> new(input)
-                "quit", "q" -> running = false
+                "quit", "x" -> running = false
+                "now-playing", "p" -> nowPlaying(input)
+                "queue", "q" -> queue(input)
+                "volume", "v" -> volume(input)
+                "library-provider", "lp" -> libraryProviderCommand(input)
+                "song-provider", "sp" -> songProviderCommand(input)
+                "songs", "s" -> songs(input)
+                "tags", "t" -> tags(input)
+                "tag-types", "tt" -> tagTypes(input)
                 "" -> {}
-                else -> println("Not a command. Use \"list\" to see available commands.")
+                else -> println("Not a command. Use \"list\" to see commands.")
             }
         }
     }
+
+
 
 /* ---------------------------------- List ---------------------------------- */
 
@@ -62,72 +65,72 @@ class CLI {
         if (input.size != 1) {
             println("Usage: list"); return
         }
-        for (line in shortDescriptions)println(line)
+        for (line in shortDescriptions) println(line)
     }
 
-/* ----------------------------------- New ---------------------------------- */
+// /* ----------------------------------- New ---------------------------------- */
 
-    fun new(input: List<String>) {
-        if (input.size == 1 || input.size > 2) {
-            println("Usage: new [type]"); return
-        }
+//     fun new(input: List<String>) {
+//         if (input.size == 1 || input.size > 2) {
+//             println("Usage: new [type]"); return
+//         }
 
-        when (input[1]) {
-            "library-provider", "lp" -> newLibraryProvider()
-            "song-provider", "sp" -> newSongProvider()
-            "library", "l" -> newLibrary()
-            "song", "s" -> newSong()
-            "tag", "t" -> newTag()
-            "tag-type", "tt" -> newTagType()
-            else -> println("Not a type. Use \"help new\" to list types.")
-        }
-    }
+//         when (input[1]) {
+//             "library-provider", "lp" -> newLibraryProvider()
+//             "song-provider", "sp" -> newSongProvider()
+//             "library", "l" -> newLibrary()
+//             "song", "s" -> newSong()
+//             "tag", "t" -> newTag()
+//             "tag-type", "tt" -> newTagType()
+//             else -> println("Not a type. Use \"help new\" to list types.")
+//         }
+//     }
 
-    fun newLibraryProvider() {
+//     fun newLibraryProvider() {
 
-    }
+//     }
 
-    fun newSongProvider() {
+//     fun newSongProvider() {
 
-    }
+//     }
 
-    fun newLibrary() {
-        if (songLibrary != null) {
-            print("There is already a loaded library. Creating a new library will overwrite it. ")
-            if(yesNo("Are you sure? ") != true) return
-        }
-        print("Choose a default tag type color (#XXXXXX): ")
+//     fun newLibrary() {
+//         if (songLibrary != null) {
+//             print("There is already a loaded library. Creating a new library will overwrite it. ")
+//             if(yesNo("Are you sure? ") != true) return
+//         }
+//         print("Choose a default tag type color (#XXXXXX): ")
 
-        fun askColor(): Int? {
-            val input = readLine() ?: return null
-            if (input.length == 7 && input[0] == '#') {
-                val result = try {
-                    java.lang.Long.parseLong(input.substring(1), 16).toInt()
-                }
-                catch (_: NumberFormatException) { -1 }
+//         fun askColor(): Int? {
+//             val input = readLine() ?: return null
+//             if (input.length == 7 && input[0] == '#') {
+//                 val result = try {
+//                     java.lang.Long.parseLong(input.substring(1), 16).toInt()
+//                 }
+//                 catch (_: NumberFormatException) { -1 }
 
-                if (result >= 0) return result
-            }
-            print("Please use the format #XXXXXX: ")
-            return askColor()
-        }
+//                 if (result >= 0) return result
+//             }
+//             print("Please use the format #XXXXXX: ")
+//             return askColor()
+//         }
 
-        val color = askColor() ?: return
-        songLibrary = SongLibrary(TagType(color))
-        println("Loaded new library.")
-    }
+//         val color = askColor() ?: return
+//         songLibrary = SongLibrary(TagType(color))
+//         println("Loaded new library.")
+//     }
 
-    fun newSong() {
+//     fun newSong() {
 
-    }
+//     }
 
-    fun newTag() {
+//     fun newTag() {
 
-    }
+//     }
 
-    fun newTagType() {
+//     fun newTagType() {
 
-    }
+//     }
 
 /* ---------------------------------- Help ---------------------------------- */
 
@@ -144,15 +147,127 @@ class CLI {
             val fullDescriptions: Map<String, List<String>>
     )
 
-/* ---------------------------------- Other --------------------------------- */
+/* ------------------------------- Now Playing ------------------------------ */
 
-    fun yesNo(question: String): Boolean? {
+    fun nowPlaying(input: List<String>) {
+
+    }
+
+/* ---------------------------------- Queue --------------------------------- */
+
+    fun queue(input: List<String>) {
+
+    }
+
+/* --------------------------------- Volume --------------------------------- */
+
+    fun volume(input: List<String>) {
+
+    }
+
+/* ---------------------------- Library Provider ---------------------------- */
+
+    fun libraryProviderCommand(input: List<String>) {
+
+        // print summary
+        if (input.size == 1) {
+            if (libraryProvider == null) {
+                println("There is no loaded library provider.")
+
+            } else if (libraryProvider is LocalLibraryProvider) {
+                val localProvider = libraryProvider as LocalLibraryProvider
+                println("Type: local library provider")
+                println("Library path: " + localProvider.libraryPath)
+
+            } else {
+                println("Unknown library provider type.")
+                println("Library provider: $libraryProvider")
+            }
+        }
+
+        // other commands
+        else {
+            when (input[1]) {
+
+                "new", "n" -> {
+
+                    if (libraryProvider != null) {
+                        print("There is already a loaded library provider. Creating a new one will overwrite it. ")
+                        if(binaryQuestion("Are you sure?: ", listOf("yes", "y"), listOf("no", "n")) != true) return
+                    }
+
+                    when (askUntilCorrectOrEmpty("What type of library provider would you like to create? (local): ", "local")) {
+                        "local" -> {
+                            print("What is the path to the library file?: ")
+                            val path = readLine()?.toLowerCase()?.trim()
+                            if (path == "" || path == null) return
+                            libraryProvider = LocalLibraryProvider(path)
+                            println("Loaded new library provider.")
+                        }
+                        null -> return
+                    }
+                }
+
+                "push", "s" -> {
+
+                }
+
+                "pull", "l" -> {
+
+                }
+
+                "modify", "m" -> {
+
+                }
+            }
+        }
+
+    }
+
+/* ------------------------------ Song Provider ----------------------------- */
+
+    fun songProviderCommand(input: List<String>) {
+
+    }
+
+/* ---------------------------------- Songs --------------------------------- */
+
+    fun songs(input: List<String>) {
+
+    }
+
+/* ---------------------------------- Tags ---------------------------------- */
+
+    fun tags(input: List<String>) {
+
+    }
+
+/* -------------------------------- Tag Types ------------------------------- */
+
+    fun tagTypes(input: List<String>) {
+
+    }
+
+/* ---------------------------------- Util ---------------------------------- */
+
+    fun binaryQuestion(question: String, trueResponses: List<String>, falseResponses: List<String>): Boolean? {
         print(question)
-        return when (readLine()?.toLowerCase()?.trim()) {
-            "yes", "y" -> true
-            "no", "n" -> false
-            null -> null
-            else -> yesNo(question)
+        val input = readLine()?.toLowerCase()?.trim()
+        return when {
+            trueResponses.contains(input) -> true
+            falseResponses.contains(input) -> false
+            input == null -> null
+            else -> binaryQuestion(question, trueResponses, falseResponses)
+        }
+    }
+
+    fun askUntilCorrectOrEmpty(question: String, vararg responses: String): String? {
+        print(question)
+        val input = readLine()?.toLowerCase()?.trim()
+        return when {
+            responses.contains(input) -> input
+            input == "" || input == null -> null
+            else -> askUntilCorrectOrEmpty(question, *responses)
         }
     }
 }
