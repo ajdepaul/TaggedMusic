@@ -31,6 +31,10 @@ class TestDataClasses {
         before = assertUpdated(before, song.lastModified)
         assertEquals("title2", song.title)
 
+        song = song.mutate { duration = 2000 }
+        before = assertUpdated(before, song.lastModified)
+        assertEquals(2000, song.duration)
+
         song = song.mutate { artist = "artist" }
         before = assertUpdated(before, song.lastModified)
         assertEquals("artist", song.artist)
@@ -56,8 +60,9 @@ class TestDataClasses {
         assertEquals(persistentHashSetOf("A", "B", "C"), song.tags)
 
         // multiple mutates
-        song = song.mutate { year = 2010; album = "album2" }
+        song = song.mutate { duration = 3000; year = 2010; album = "album2" }
         before = assertUpdated(before, song.lastModified)
+        assertEquals(3000, song.duration)
         assertEquals(2010, song.year)
         assertEquals("album2", song.album)
 
@@ -74,8 +79,9 @@ class TestDataClasses {
         assertEquals(2, song.trackNum)
 
         // don't update last modified
-        song = song.mutate(false) { year = 1990; album = "album3"}
+        song = song.mutate(false) { duration = 4000; year = 1990; album = "album3"}
         assertEquals(before, song.lastModified)
+        assertEquals(4000, song.duration)
         assertEquals(1990, song.year)
         assertEquals("album3", song.album)
 

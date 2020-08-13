@@ -39,6 +39,7 @@ data class Song private constructor(
 
     data class MutableSong internal constructor(private val song: Song) {
         var title: String = song.title
+        var duration: Int = song.duration
         var artist: String? = song.artist
         var album: String? = song.album
         var trackNum: Int? = song.trackNum
@@ -47,7 +48,7 @@ data class Song private constructor(
         var tags: PersistentSet<String> = song.tags
 
         internal fun build(updateLastModified: Boolean): Song {
-            return Song(title, song.duration, artist, album, trackNum, year,
+            return Song(title, duration, artist, album, trackNum, year,
                     if(updateLastModified) LocalDateTime.now() else song.lastModified, playCount, tags)
         }
     }
