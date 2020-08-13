@@ -32,6 +32,9 @@ dependencies {
     // https://github.com/Kotlin/kotlinx.collections.immutable
     implementation 'org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.2'
 
+    // https://github.com/mpatric/mp3agic
+    implementation 'com.mpatric:mp3agic:0.9.1'
+
     // https://github.com/ajdepaul/TaggedMusic
     compile files('lib/TaggedMusic-1.0.1.jar')
 }
