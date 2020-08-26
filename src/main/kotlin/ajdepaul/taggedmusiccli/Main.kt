@@ -7,9 +7,7 @@ import com.mpatric.mp3agic.Mp3File
 import kotlinx.collections.immutable.*
 import java.io.File
 
-fun main(args: Array<String>) {
-    CLI().run()
-}
+fun main() { CLI().run() }
 
 private class CLI {
 
@@ -126,14 +124,14 @@ private class CLI {
     }
 
     fun lpNew(input: List<String>) {
-        if (input.size != 2) { badArgs("library-provider"); return }
+        if (input.size != 3) { badArgs("library-provider"); return }
         if (libraryProvider != null) {
             print("Creating a new library provider will overwrite the old one. ")
             if (binaryQuestion("Are you sure?: ", posResponses, negResponses) != true) return
         }
 
         // used when for future expansion
-        when (askUntilCorrect("What type of library provider would you like to create?", "local")) {
+        when (input[2]) {
             "local" -> {
                 print("What is the path to the library file?: ")
                 val path = stringResponse()?.replace("\"", "")
@@ -141,6 +139,7 @@ private class CLI {
                 libraryProvider = LocalLibraryProvider(path)
                 println("Loaded new library provider.")
             }
+            else -> badArgs("song-provider")
         }
     }
 
@@ -218,14 +217,14 @@ private class CLI {
     }
 
     fun spNew(input: List<String>) {
-        if (input.size != 2) { badArgs("song-provider"); return }
+        if (input.size != 3) { badArgs("song-provider"); return }
         if (songProvider != null) {
             print("Creating a new song provider will overwrite the old one. ")
             if (binaryQuestion("Are you sure?: ", posResponses, negResponses) != true) return
         }
 
         // used when for future expansion
-        when (askUntilCorrect("What type of song provider would you like to create?", "local")) {
+        when (input[2]) {
             "local" -> {
                 print("What is the path to the song directory?: ")
                 val path = stringResponse()?.replace("\"", "")
@@ -233,6 +232,7 @@ private class CLI {
                 songProvider = LocalSongProvider(path)
                 println("Loaded new song provider.")
             }
+            else -> badArgs("song-provider")
         }
     }
 
@@ -254,26 +254,33 @@ private class CLI {
             input.size < 3 -> badArgs("song-provider")
             songProvider == null -> println("There is no loaded song provider to push to.")
             else -> {
-                var songPath = input[2] + " "
-                if (input.size > 3) for (i in 3 until input.size) songPath += input[i] + " "
-                songPath = songPath.trim().replace("\"", "")
+                val songPath = input.drop(2).reduce { a, b -> "$a $b" }.trim().replace("\"", "")
                 val songFile = File(songPath)
 
-                if (songProvider!!.hasSong(songFile.name)) {
-                    print("The song provider already has this song. ")
-                    if (binaryQuestion("Would you still like to push it? ", posResponses, negResponses) != true) return
+                val songFileName = when (binaryQuestion("Use ${songFile.name} for the file name?: ", posResponses, negResponses)) {
+                    true -> songFile.name
+                    false -> {
+                        print("What file name should be used?: ")
+                        stringResponse() ?: return
+                    }
+                    null -> return
                 }
 
-                if (songProvider!!.pushSong(songPath, songFile.name)) {
+                if (songProvider!!.hasSong(songFileName)) {
+                    print("The song provider already has this song. ")
+                    if (binaryQuestion("Would you still like to push it?: ", posResponses, negResponses) != true) return
+                }
+
+                if (songProvider!!.pushSong(songPath, songFileName)) {
                     println("Pushed successfully.")
 
                     // add song to library?
-                    if (!songLibrary.songs.keys.contains(songFile.name)) {
+                    if (!songLibrary.songs.keys.contains(songFileName)) {
                         print("The song is not in the loaded library. ")
                         if (binaryQuestion("Would you like to add it?: ", posResponses, negResponses) == true) {
                             val song = songWizard(songFile)
                             if (song != null) {
-                                songLibrary.putSong(songFile.name, song)
+                                songLibrary.putSong(songFileName, song)
                                 println("Song added.")
                             }
                         }
@@ -356,7 +363,13 @@ private class CLI {
         }
 
         // artist
-        if (!(binaryQuestion("Is the artist: \"${song.artist}\" correct?: ", posResponses, negResponses) ?: return null)) {
+        var askForProperty = true
+        if (song.artist != null) {
+            if ((binaryQuestion("Is the artist: \"${song.artist}\" correct?: ", posResponses, negResponses) ?: return null)) {
+                askForProperty = false
+            }
+        }
+        if (askForProperty) {
             print("What is the artist? (blank for none): ")
             val input = stringResponse() ?: return null
             if (input != "") song = song.mutate { artist = null }
@@ -364,7 +377,13 @@ private class CLI {
         }
 
         // album
-        if (!(binaryQuestion("Is the album: \"${song.album}\" correct?: ", posResponses, negResponses) ?: return null)) {
+        askForProperty = true
+        if (song.album != null) {
+            if ((binaryQuestion("Is the album: \"${song.album}\" correct?: ", posResponses, negResponses) ?: return null)) {
+                askForProperty = false
+            }
+        }
+        if (askForProperty) {
             print("What is the album? (blank for none): ")
             val input = stringResponse() ?: return null
             if (input != "") song = song.mutate { album = input }
@@ -372,7 +391,13 @@ private class CLI {
         }
 
         // track number
-        if (!(binaryQuestion("Is the track number: ${song.trackNum} correct?: ", posResponses, negResponses) ?: return null)) {
+        askForProperty = true
+        if (song.trackNum != null) {
+            if ((binaryQuestion("Is the track number: ${song.trackNum} correct?: ", posResponses, negResponses) ?: return null)) {
+                askForProperty = false
+            }
+        }
+        if (askForProperty) {
             print("What is the track number? (blank for none): ")
             val input = stringResponse() ?: return null
             if (input != "") {
@@ -382,7 +407,13 @@ private class CLI {
         }
 
         // year
-        if (!(binaryQuestion("Is the year: ${song.year} correct?: ", posResponses, negResponses) ?: return null)) {
+        askForProperty = true
+        if (song.year != null || song.year != 0) {
+            if ((binaryQuestion("Is the year: ${song.year} correct?: ", posResponses, negResponses) ?: return null)) {
+                askForProperty = false
+            }
+        }
+        if (askForProperty) {
             print("What is the year? (blank for none): ")
             val input = stringResponse() ?: return null
             if (input != "") {

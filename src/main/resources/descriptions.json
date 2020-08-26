@@ -68,7 +68,7 @@
         "library-provider": [
             "Usage:",
             "    library-provider                    Prints a summary of the loaded library provider.",
-            "    library-provider new                Runs a wizard to create and load a new library provider.",
+            "    library-provider new [type]         Runs a wizard to create and load a new library provider of the specified type. Types include: local.",
             "    library-provider push               Pushes the loaded library to the loaded library provider.",
             "    library-provider pull               Pulls the library from the provider and loads it.",
             "    library-provider modify             Modify any provider specific settings.",
@@ -84,7 +84,7 @@
         "song-provider": [
             "Usage:",
             "    song-provider                       Prints a summary of the loaded song provider.",
-            "    song-provider new                   Runs a wizard to create and load a new song provider.",
+            "    song-provider new [type]            Runs a wizard to create and load a new song provider of the specified type. Types include: local.",
             "    song-provider has [file name]       Checks if the loaded song provider has the song available to pull.",
             "    song-provider push [song path]      Pushes the song file to the provider to be retrieved later.",
             "    song-provider remove [file name]    Removes the song from the provider.",
@@ -102,7 +102,7 @@
         "songs": [
             "Usage:",
             "    songs                               Prints a summary of all the songs in the library.",
-            "    songs new                           Runs a wizard that creates a new song and adds it to the library.",
+            "    songs new [file path/file name]     Runs a wizard that creates a new song and adds it to the library.",
             "    songs info [file name]              Prints all of the specified song's properties",
             "    songs search [property] <text>      Returns a list of songs that contain the specified text within the specified property. Searchable properties include: file-name, title, artist, and album.",
             "    songs list                          Lists all the songs in the library ten at a time. Enter \"p\" to view the previous ten or \"x\" to leave the command.",
@@ -120,7 +120,7 @@
         "tags": [
             "Usage:",
             "    tags                                Prints a summary of all the tags in the library.",
-            "    tags new                            Runs a wizard that creates a new tag and adds it to the library.",
+            "    tags new [name]                     Runs a wizard that creates a new tag and adds it to the library.",
             "    tags info [name]                    Prints all of the specified tag's properties",
             "    tags search [property] <text>       Returns a list of tags that contain the specified text within the specified property. Searchable properties include: name, type and description.",
             "    tags list                           Lists all the tags in the library ten at a time. Enter \"p\" to view the previous ten or \"x\" to leave the command.",
@@ -138,7 +138,7 @@
         "tag-types": [
             "Usage:",
             "    tag-types                           Prints a summary of all the tags types in the library.",
-            "    tag-types new                       Runs a wizard that creates a new tag type and adds it to the library.",
+            "    tag-types new [name]                Runs a wizard that creates a new tag type and adds it to the library.",
             "    tag-types info [name]               Prints all of the specified tag types's properties",
             "    tag-types search [property] <text>  Returns a list of tag types that contain the specified text within the specified property. Searchable properties include: name.",
             "    tag-types list                      Lists all the tag types in the library ten at a time. Enter \"p\" to view the previous ten or \"x\" to leave the command.",
