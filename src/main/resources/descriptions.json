@@ -32,7 +32,7 @@
             "    now-playing                         Prints a summary of the song that is currently playing.",
             "    now-playing [play/pause]            Plays or pauses the current song.",
             "    now-playing jump [MM:SS]            Jumps to the song to the specified time.",
-            "    now-playing info                    Prints all of the song's properties",
+            "    now-playing info                    Prints all of the song's properties.",
             "    now-playing modify                  Modify the song's file name, artist, album, track number, year, and tags.",
             "",
             "Shortcuts:",
