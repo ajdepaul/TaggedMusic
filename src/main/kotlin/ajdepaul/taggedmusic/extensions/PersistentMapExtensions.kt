@@ -18,7 +18,6 @@ import kotlinx.collections.immutable.*
  */
 fun <K, V> PersistentMap<K, V>.removeAll(predicate: (Map.Entry<K, V>) -> Boolean):
         PersistentMap<K, V> {
-
     return this.mutate { mutableMap ->
         mutableMap.entries.forEach { entry ->
             if (predicate(entry)) mutableMap.remove(entry.key)
@@ -34,7 +33,6 @@ fun <K, V> PersistentMap<K, V>.removeAll(predicate: (Map.Entry<K, V>) -> Boolean
  */
 fun <K, V> PersistentMap<K, V>.keepOnly(predicate: (Map.Entry<K, V>) -> Boolean):
         PersistentMap<K, V> {
-
     return this.mutate { mutableMap ->
         mutableMap.entries.forEach { entry ->
             if (!predicate(entry)) mutableMap.remove(entry.key)

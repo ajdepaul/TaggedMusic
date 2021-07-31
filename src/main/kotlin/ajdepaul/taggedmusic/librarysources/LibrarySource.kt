@@ -65,7 +65,7 @@ interface LibrarySource {
 
     /**
      * Keeps track of updates made to a [LibrarySource] that can then be applied by calling
-     * [commit]. *These functions should never be called outside a [SongLibrary].*
+     * [commit]. *These functions should not be called outside a [SongLibrary].*
      */
     interface UpdateBuilder {
 
