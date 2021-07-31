@@ -1,3 +1,12 @@
+TODO for the best efficiency with PersisentSets and PersisentMaps, use the functions implemented by
+kotlinx-collections-immutable discussed
+[here](https://github.com/Kotlin/kotlinx.collections.immutable/blob/master/README.md]) and
+[here](https://github.com/Kotlin/kotlinx.collections.immutable/blob/master/proposal.md).
+(+, -, put, putAll, remove, removeAll, etc.)
+
+also this https://github.com/Kotlin/kotlinx.collections.immutable/blob/master/core/commonMain/src/implementations/immutableMap/PersistentHashMap.kt
+this too import kotlinx.collections.immutable.*
+
 # Tagged Music
 
 Applying folksonomy to music libraries. This library provides a large amount of control over a

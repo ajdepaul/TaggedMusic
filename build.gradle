@@ -24,11 +24,17 @@ dependencies {
     // Use the Kotlin JUnit integration.
     testImplementation 'org.jetbrains.kotlin:kotlin-test-junit'
 
-    // https://mvnrepository.com/artifact/com.google.code.gson/gson
+    // https://mvnrepository.com/artifact/com.google.code.gson/gson TODO check license
     implementation 'com.google.code.gson:gson:2.8.6'
 
-    // https://github.com/Kotlin/kotlinx.collections.immutable
+    // https://github.com/Kotlin/kotlinx.collections.immutable TODO check license
     implementation 'org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.2'
+
+    // https://mvnrepository.com/artifact/mysql/mysql-connector-java TODO check license
+    implementation 'mysql:mysql-connector-java:5.1.49'
+
+    // https://mvnrepository.com/artifact/com.jcraft/jsch TODO check license
+    implementation group: 'com.jcraft', name: 'jsch', version: '0.1.55'
 }
 
 jar {
