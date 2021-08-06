@@ -1,13 +1,13 @@
 .gradle
-build
-test
+/build
+/test
 
 .idea
 *.iml
 *.ipr
 *.iws
 .project
-out
+#out
 
 .classpath
 .settings

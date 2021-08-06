@@ -8,6 +8,7 @@ import ajdepaul.taggedmusic.Song
 import ajdepaul.taggedmusic.Tag
 import ajdepaul.taggedmusic.TagType
 import ajdepaul.taggedmusic.extensions.filterByTags
+import ajdepaul.taggedmusic.songlibraries.SongLibrary
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonIOException
@@ -34,26 +35,37 @@ class JsonLibrarySource(
     var jsonFilePath: String
 ) : LibrarySource {
 
+    /**
+     * Creates an empty [JsonLibrarySource] and creates the json file to go along with it.
+     * @param defaultTagType the initial default tag type for the [SongLibrary]
+     */
+    constructor(jsonFilePath: String, defaultTagType: TagType) : this(jsonFilePath) {
+        writeJson(
+            jsonFilePath,
+            SongLibraryData(SongLibrary.VERSION, defaultTagType, mapOf(), mapOf(), mapOf())
+        )
+    }
+
 /* ----------------------------------------- Retrieving ----------------------------------------- */
 
     override fun getVersion(): String {
-        return readJson().version
+        return readJson(jsonFilePath).version
     }
 
     override fun getDefaultTagType(): TagType {
-        return readJson().defaultTagType
+        return readJson(jsonFilePath).defaultTagType
     }
 
     override fun hasSong(fileName: String): Boolean {
-        return fileName in readJson().songs
+        return fileName in readJson(jsonFilePath).songs
     }
 
     override fun getSong(fileName: String): Song? {
-        return readJson().songs[fileName]?.toSong()
+        return readJson(jsonFilePath).songs[fileName]?.toSong()
     }
 
     override fun getAllSongs(): PersistentMap<String, Song> {
-        return readJson().songs
+        return readJson(jsonFilePath).songs
             .map { it.key to it.value.toSong() }
             .toMap()
             .toPersistentHashMap()
@@ -67,38 +79,40 @@ class JsonLibrarySource(
     }
 
     override fun hasTag(tagName: String): Boolean {
-        return tagName in readJson().tags
+        return tagName in readJson(jsonFilePath).tags
     }
 
     override fun getTag(tagName: String): Tag? {
-        return readJson().tags[tagName]
+        return readJson(jsonFilePath).tags[tagName]
     }
 
     override fun getAllTags(): PersistentMap<String, Tag> {
-        return readJson().tags.toPersistentHashMap()
+        return readJson(jsonFilePath).tags.toPersistentHashMap()
     }
 
     override fun hasTagType(tagTypeName: String): Boolean {
-        return tagTypeName in readJson().tagTypes
+        return tagTypeName in readJson(jsonFilePath).tagTypes
     }
 
     override fun getTagType(tagTypeName: String): TagType? {
-        return readJson().tagTypes[tagTypeName]
+        return readJson(jsonFilePath).tagTypes[tagTypeName]
     }
 
     override fun getAllTagTypes(): PersistentMap<String, TagType> {
-        return readJson().tagTypes.toPersistentHashMap()
+        return readJson(jsonFilePath).tagTypes.toPersistentHashMap()
     }
 
 /* ------------------------------------------ Updating ------------------------------------------ */
 
     override fun updater(): LibrarySource.UpdateBuilder {
-        return UpdateBuilder(this)
+        return UpdateBuilder(this, jsonFilePath)
     }
 
     /** See [LibrarySource.UpdateBuilder]. */
-    private class UpdateBuilder(val jsonLibrarySource: JsonLibrarySource) :
-        LibrarySource.UpdateBuilder {
+    private class UpdateBuilder(
+        val jsonLibrarySource: JsonLibrarySource,
+        val jsonFilePath: String
+    ) : LibrarySource.UpdateBuilder {
 
         val updateQueue: Queue<LibrarySource.Update> = LinkedList()
 
@@ -138,7 +152,7 @@ class JsonLibrarySource(
         }
 
         override fun commit() {
-            val songLibraryData = jsonLibrarySource.readJson()
+            val songLibraryData = readJson(jsonFilePath)
             var songs = songLibraryData.songs.toPersistentHashMap()
             var tags = songLibraryData.tags.toPersistentHashMap()
             var tagTypes = songLibraryData.tagTypes.toPersistentHashMap()
@@ -148,12 +162,18 @@ class JsonLibrarySource(
                 when (val update = updateQueue.remove()) {
                     is LibrarySource.SetDefaultTagTypeUpdate ->
                         songLibraryData.defaultTagType = update.tagType
-                    is LibrarySource.PutSongUpdate ->
-                        songs += (update.fileName to update.song.toJsonData())
+                    is LibrarySource.PutSongUpdate -> {
+                        songs += (update.fileName to songToJsonData(update.song))
+                        tags += update.song.tags.associateWith { Tag() }
+                    }
                     is LibrarySource.RemoveSongUpdate ->
                         songs -= update.fileName
-                    is LibrarySource.PutTagUpdate ->
+                    is LibrarySource.PutTagUpdate -> {
                         tags += update.tagName to update.tag
+                        if (update.tag.type != null) {
+                            tagTypes += update.tag.type to songLibraryData.defaultTagType
+                        }
+                    }
                     is LibrarySource.RemoveTagUpdate ->
                         tags -= update.tagName
                     is LibrarySource.PutTagTypeUpdate ->
@@ -167,70 +187,72 @@ class JsonLibrarySource(
             songLibraryData.tags = tags
             songLibraryData.tagTypes = tagTypes
 
-            songLibraryData.writeJson(jsonLibrarySource.jsonFilePath)
-        }
-
-        /**
-         * Creates/updates the file with a JSON string using this [SongLibraryData].
-         * @throws JsonIOException if there was a problem writing to the JSON writer
-         * @throws IOException if there was a problem writing to the file at [jsonFilePath]
-         */
-        @Throws(JsonIOException::class, IOException::class)
-        fun SongLibraryData.writeJson(jsonFilePath: String) {
-            val gson = GsonBuilder().setPrettyPrinting().create()
-            File(jsonFilePath).writer().use { gson.toJson(this, it) }
-        }
-
-        /** Converts this [Song] into a [SongData]. */
-        fun Song.toJsonData(): SongData {
-            return SongData(
-                this.title, this.duration, this.artist, this.album, this.trackNum, this.year,
-                this.lastModified.toString(), this.playCount, this.tags
-            )
+            writeJson(jsonLibrarySource.jsonFilePath, songLibraryData)
         }
     }
 
 /* -------------------------------------- JSON Data Helpers ------------------------------------- */
 
-    /**
-     * Creates [SongLibraryData] from [jsonFilePath].
-     * @throws JsonIOException if there was a problem reading from the JSON Reader
-     * @throws JsonSyntaxException if [jsonFilePath] uses bad JSON format
-     * @throws IOException if there was a problem reading the file at [jsonFilePath]
-     */
-    @Throws(JsonIOException::class, JsonSyntaxException::class, IOException::class)
-    private fun readJson(): SongLibraryData {
-        return File(jsonFilePath).reader().use {
-            Gson().fromJson(it, SongLibraryData::class.java)
+    private companion object {
+        /**
+         * Creates [SongLibraryData] from [jsonFilePath].
+         * @throws JsonIOException if there was a problem reading from the JSON Reader
+         * @throws JsonSyntaxException if [jsonFilePath] uses bad JSON format
+         * @throws IOException if there was a problem reading the file at [jsonFilePath]
+         */
+        @Throws(JsonIOException::class, JsonSyntaxException::class, IOException::class)
+        fun readJson(jsonFilePath: String): SongLibraryData {
+            return File(jsonFilePath).reader().use {
+                Gson().fromJson(it, SongLibraryData::class.java)
+            }
         }
-    }
 
-    /**
-     * [SongLibrary][ajdepaul.taggedmusic.songlibraries.SongLibrary] data stored in a format for
-     * reading/writing JSON strings.
-     */
-    private data class SongLibraryData(
-        val version: String,
-        var defaultTagType: TagType,
-        var songs: Map<String, SongData>,
-        var tags: Map<String, Tag>,
-        var tagTypes: Map<String, TagType>
-    )
+        /**
+         * Creates/updates the file with a JSON string using [songLibraryData].
+         * @throws JsonIOException if there was a problem writing to the JSON writer
+         * @throws IOException if there was a problem writing to the file at [jsonFilePath]
+         */
+        @Throws(JsonIOException::class, IOException::class)
+        fun writeJson(jsonFilePath: String, songLibraryData: SongLibraryData) {
+            val gson = GsonBuilder().setPrettyPrinting().create()
+            File(jsonFilePath).writer().use { gson.toJson(songLibraryData, it) }
+        }
 
-    /** [Song] data stored in a format for reading/writing JSON strings. */
-    private data class SongData(
-        val title: String, val duration: Int, val artist: String?, val album: String?,
-        val trackNum: Int?, val year: Int?, val lastModified: String, val playCount: Int,
-        val tags: Set<String>
-    ) {
-
-        /** Converts this [SongData] into a [Song]. */
-        fun toSong(): Song {
-            return Song(
-                this.title, this.duration, this.artist, this.album, this.trackNum, this.year,
-                LocalDateTime.parse(this.lastModified), this.playCount,
-                this.tags.toPersistentHashSet()
+        /** Converts [song] into [SongData]. */
+        fun songToJsonData(song: Song): SongData {
+            return SongData(
+                song.title, song.duration, song.artist, song.album, song.trackNum, song.year,
+                song.lastModified.toString(), song.playCount, song.tags
             )
+        }
+
+        /**
+         * [SongLibrary][ajdepaul.taggedmusic.songlibraries.SongLibrary] data stored in a format for
+         * reading/writing JSON strings.
+         */
+        data class SongLibraryData(
+            val version: String,
+            var defaultTagType: TagType,
+            var songs: Map<String, SongData>,
+            var tags: Map<String, Tag>,
+            var tagTypes: Map<String, TagType>
+        )
+
+        /** [Song] data stored in a format for reading/writing JSON strings. */
+        data class SongData(
+            val title: String, val duration: Int, val artist: String?, val album: String?,
+            val trackNum: Int?, val year: Int?, val lastModified: String, val playCount: Int,
+            val tags: Set<String>
+        ) {
+
+            /** Converts this [SongData] into a [Song]. */
+            fun toSong(): Song {
+                return Song(
+                    this.title, this.duration, this.artist, this.album, this.trackNum, this.year,
+                    LocalDateTime.parse(this.lastModified), this.playCount,
+                    this.tags.toPersistentHashSet()
+                )
+            }
         }
     }
 }

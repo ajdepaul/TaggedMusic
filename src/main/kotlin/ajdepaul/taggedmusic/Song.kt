@@ -8,6 +8,8 @@ import kotlinx.collections.immutable.PersistentSet
 import kotlinx.collections.immutable.persistentHashSetOf
 import java.time.LocalDateTime
 
+// TODO add dateAdded & make artist nullable
+
 /**
  * All the data stored about a single [Song]. Cannot be converted to json directly. Use [toJsonData]
  * for a json friendly format.
