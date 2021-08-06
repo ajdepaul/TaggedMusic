@@ -12,7 +12,7 @@ class TestTag {
     /** Tests the default [Tag] values. */
     @Test
     fun testDefaults() {
-        var tag = Tag()
+        var tag = Tag(null)
         assertEquals(null, tag.type)
         assertEquals(null, tag.description)
     }
@@ -20,7 +20,7 @@ class TestTag {
     /** Tests [Tag.mutate]. */
     @Test
     fun testMutate() {
-        var tag = Tag()
+        var tag = Tag(null)
 
         tag = tag.mutate { type = "type" }
         assertEquals("type", tag.type)

@@ -140,7 +140,9 @@ abstract class SongLibrary(
     protected abstract fun _putTag(tagName: String, tag: Tag)
 
     /**
-     * Removes a [Tag] from the [Tag] map using the key [tagName].
+     * Removes a [Tag] from the [Tag] map using the key [tagName]. Any [Song]s in the [Song] map
+     * that have [tagName] will have [tagName] removed. [Song]s with the [Tag] removed, do not have
+     * their [Song.lastModified] time updated.
      * @param tagName if blank, no change is made
      */
     fun removeTag(tagName: String) {
@@ -206,7 +208,8 @@ abstract class SongLibrary(
     protected abstract fun _putTagType(tagTypeName: String, tagType: TagType)
 
     /**
-     * Removes a [TagType] from the [TagType] map using the key [tagTypeName].
+     * Removes a [TagType] from the [TagType] map using the key [tagTypeName]. Any [Tag]s in the
+     * [Tag] map that have [tagTypeName] will have their type set to null.
      * @param tagTypeName if blank, no change is made
      */
     fun removeTagType(tagTypeName: String) {

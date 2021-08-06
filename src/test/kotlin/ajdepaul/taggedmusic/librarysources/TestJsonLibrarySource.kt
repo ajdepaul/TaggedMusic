@@ -8,9 +8,9 @@ import ajdepaul.taggedmusic.Song
 import ajdepaul.taggedmusic.Tag
 import ajdepaul.taggedmusic.TagType
 import ajdepaul.taggedmusic.songlibraries.SongLibrary
+import kotlinx.collections.immutable.minus
 import kotlinx.collections.immutable.persistentHashMapOf
 import kotlinx.collections.immutable.persistentHashSetOf
-import kotlinx.collections.immutable.persistentSetOf
 import org.junit.Test
 import java.io.File
 import kotlin.test.assertEquals
@@ -54,12 +54,7 @@ class TestJsonLibrarySource {
         val jls = JsonLibrarySource(jsonFilePath, TagType(0))
 
         val song1 = Song("title1", 1000, "artist1")
-        val song2 = Song(
-            "title2",
-            1000,
-            "artist2",
-            tags = persistentHashSetOf("tag3") // should add a new tag
-        )
+        val song2 = Song("title2", 1000, "artist2", tags = persistentHashSetOf("tag3"))
 
         jls.updater()
             .setDefaultTagType(TagType(100))
@@ -67,7 +62,7 @@ class TestJsonLibrarySource {
             .putTag("tag1", Tag(null))
             .putTag("tag2", Tag("type2")) // should add a new tag type
             .putSong("filename1", song1)
-            .putSong("filename2", song2)
+            .putSong("filename2", song2) // should add a new tag
             .commit()
 
         assertEquals(TagType(100), jls.getDefaultTagType())
@@ -81,18 +76,19 @@ class TestJsonLibrarySource {
 
         jls.updater()
             .setDefaultTagType(TagType(99))
-            .removeTagType("type1")
-            .removeTag("tag1")
+            .removeTagType("type2") // should set tag2 type to null
+            .removeTag("tag3") // should remove tag3 from song filename2
             .removeSong("filename1")
             .commit()
 
         assertEquals(TagType(99), jls.getDefaultTagType())
-        assertNull(jls.getTagType("type1"))
-        assertNull(jls.getTag("tag1"))
-        assertEquals(Tag("type2"), jls.getTag("tag2"))
-        assertEquals(TagType(100), jls.getTagType("type2")) // TODO
+        assertNull(jls.getTagType("type2"))
+        assertEquals(Tag(null), jls.getTag("tag2"))
+        assertNull(jls.getTag("tag3"))
+        assertEquals(song2.mutate(false) { tags -= "tag3" }, jls.getSong("filename2"))
         assertNull(jls.getSong("filename1"))
-        assertEquals(song2, jls.getSong("filename2"))
-        assertEquals(Tag(null), jls.getTag("tag3"))
+        // unchanged
+        assertEquals(TagType(101), jls.getTagType("type1"))
+        assertEquals(Tag(null), jls.getTag("tag1"))
     }
 }

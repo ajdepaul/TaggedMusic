@@ -5,7 +5,7 @@
 package ajdepaul.taggedmusic
 
 /** All the data stored about a single [Tag]. */
-data class Tag(val type: String? = null, val description: String? = null) {
+data class Tag(val type: String?, val description: String? = null) {
 
     /** Returns a new [Tag] with the changes from [mutator] applied. */
     fun mutate(mutator: TagBuilder.() -> Unit): Tag {

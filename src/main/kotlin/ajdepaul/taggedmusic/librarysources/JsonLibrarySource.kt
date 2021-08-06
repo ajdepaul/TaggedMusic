@@ -160,26 +160,49 @@ class JsonLibrarySource(
             // apply each update
             while (updateQueue.isNotEmpty()) {
                 when (val update = updateQueue.remove()) {
+
                     is LibrarySource.SetDefaultTagTypeUpdate ->
                         songLibraryData.defaultTagType = update.tagType
+
                     is LibrarySource.PutSongUpdate -> {
                         songs += (update.fileName to songToJsonData(update.song))
-                        tags += update.song.tags.associateWith { Tag() }
+                        // add any new tags to the tag map
+                        tags += update.song.tags.associateWith { Tag(null) }
                     }
+
                     is LibrarySource.RemoveSongUpdate ->
                         songs -= update.fileName
+
                     is LibrarySource.PutTagUpdate -> {
                         tags += update.tagName to update.tag
+                        // add the tag type to the tag type map if it's new
                         if (update.tag.type != null) {
                             tagTypes += update.tag.type to songLibraryData.defaultTagType
                         }
                     }
-                    is LibrarySource.RemoveTagUpdate ->
+
+                    is LibrarySource.RemoveTagUpdate -> {
                         tags -= update.tagName
+                        // remove the tag from every song
+                        for (entry in songs) {
+                            songs += entry.key to songToJsonData(
+                                entry.value.toSong().mutate(false) { this.tags -= update.tagName })
+                        }
+                    }
+
                     is LibrarySource.PutTagTypeUpdate ->
                         tagTypes += update.tagTypeName to update.tagType
-                    is LibrarySource.RemoveTagTypeUpdate ->
+
+                    is LibrarySource.RemoveTagTypeUpdate -> {
                         tagTypes -= update.tagTypeName
+                        // for every tag that uses this tag type, set its type to null
+                        for (entry in tags) {
+                            if (entry.value.type == update.tagTypeName) {
+                                tags += entry.key to entry.value.mutate { type = null }
+                            }
+                        }
+                    }
+
                     else -> error("Unexpected LibrarySource.Up}date type.")
                 }
             }

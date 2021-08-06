@@ -8,10 +8,11 @@ import ajdepaul.taggedmusic.Song
 import ajdepaul.taggedmusic.Tag
 import ajdepaul.taggedmusic.TagType
 import ajdepaul.taggedmusic.extensions.filterByTags
-import ajdepaul.taggedmusic.extensions.keepOnly
-import ajdepaul.taggedmusic.extensions.removeAll
 import ajdepaul.taggedmusic.librarysources.LibrarySource
-import kotlinx.collections.immutable.*
+import kotlinx.collections.immutable.PersistentMap
+import kotlinx.collections.immutable.PersistentSet
+import kotlinx.collections.immutable.minus
+import kotlinx.collections.immutable.plus
 
 /**
  * [SongLibrary] that stores all library data in memory for improved read and write times. Because
@@ -93,12 +94,18 @@ class CachedSongLibrary(librarySource: LibrarySource) : SongLibrary(librarySourc
         tags += tagName to tag
 
         // add new tag type
-        if (tag.type != null && tag.type !in tagTypes) { tagTypes += tag.type to defaultTagType }
+        if (tag.type != null && tag.type !in tagTypes) {
+            tagTypes += tag.type to defaultTagType
+        }
     }
 
     override fun _removeTag(tagName: String) {
         librarySourceUpdater.removeSong(tagName)
         tags -= tagName
+        // remove the tag from every song
+        for (entry in songs) {
+            songs += entry.key to entry.value.mutate(false) { this.tags -= tagName }
+        }
     }
 
     override fun _hasTag(tagName: String): Boolean {
@@ -123,6 +130,12 @@ class CachedSongLibrary(librarySource: LibrarySource) : SongLibrary(librarySourc
     override fun _removeTagType(tagTypeName: String) {
         librarySourceUpdater.removeTagType(tagTypeName)
         tagTypes -= tagTypeName
+        // for every tag that uses this tag type, set its type to null
+        for (entry in tags) {
+            if (entry.value.type == tagTypeName) {
+                tags += entry.key to entry.value.mutate { type = null }
+            }
+        }
     }
 
     override fun _hasTagType(tagTypeName: String): Boolean {
