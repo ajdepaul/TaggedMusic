@@ -11,5 +11,3 @@
 .classpath
 .settings
 bin
-
-src/test/resources/ajdepaul/taggedmusic/librarysources/TestSftpLibrarySource/server.properties
