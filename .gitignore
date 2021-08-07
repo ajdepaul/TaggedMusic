@@ -7,8 +7,9 @@
 *.ipr
 *.iws
 .project
-#out
 
 .classpath
 .settings
 bin
+
+src/test/resources/ajdepaul/taggedmusic/librarysources/TestSftpLibrarySource/server.properties

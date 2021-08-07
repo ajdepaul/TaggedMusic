@@ -7,8 +7,14 @@ package ajdepaul.taggedmusic.librarysources
 import ajdepaul.taggedmusic.Song
 import ajdepaul.taggedmusic.Tag
 import ajdepaul.taggedmusic.TagType
+import com.jcraft.jsch.ChannelSftp
+import com.jcraft.jsch.Session
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.PersistentSet
+import org.apache.commons.io.FileUtils
+import java.io.Closeable
+import java.io.File
+import java.nio.file.Path
 
 /**
  * [LibrarySource] that retrieves required files from a SFTP server for the wrapped
@@ -20,14 +26,72 @@ import kotlinx.collections.immutable.PersistentSet
  * [localLibrarySource] directly. When applying updates, the equivalent functions are called on the
  * [localLibrarySource] and then the files are pushed to the SFTP server when
  * [LibrarySource.UpdateBuilder.commit] is called.
+ * @throws com.jcraft.jsch.JSchException if there is an issue connecting to the SFTP server or
+ * uploading/creating remote files/directories
+ * @throws java.io.IOException if there is an issue creating local directories
+ * [session]
  */
 class SftpLibrarySource(
+    /** [Session] for opening a connection to the SFTP server. */
+    private val session: Session,
+    /**
+     * The list of file paths relative to [localDirectory] to retrieve and update on the SFTP server
+     * that are required by the [localLibrarySource].
+     */
+    private val requiredFiles: Iterable<Path>,
+    /** Path to a local directory where the [localLibrarySource]'s files can be stored. */
+    private val localDirectory: Path,
+    /**
+     * Path to a directory on the SFTP server where the [localLibrarySource]'s files can be stored.
+     */
+    private val remoteDirectory: Path,
     /** The wrapped [LibrarySource] that relies on the files fetched from the SFTP server. */
-    private val localLibrarySource: LibrarySource
-) : LibrarySource {
+    private val localLibrarySource: LibrarySource,
+    /**
+     * Set to true if it's the first time using this SFTP server as a [LibrarySource]. The files
+     * required for the [localLibrarySource] will be uploaded on instantiation.
+     */
+    initialize: Boolean = false
+) : LibrarySource, Closeable {
+
+    private val channel: ChannelSftp
 
     init {
-        TODO("Fetch from SFTP server")
+        // open the connection
+        session.connect()
+        channel = session.openChannel("sftp") as ChannelSftp
+        channel.connect()
+
+        // local working directory
+        FileUtils.forceMkdir(localDirectory.toFile())
+        channel.lcd(localDirectory.toString())
+
+        // remote working directory
+        if (initialize) {
+            // create remote directory one directory at a time
+            for (nextDir in remoteDirectory) {
+                // check if the next directory exists
+                if (channel.ls(".")
+                        .map { it as ChannelSftp.LsEntry }
+                        .none { it.filename == nextDir.toString() }
+                ) {
+                    // make it if it doesn't
+                    channel.mkdir(nextDir.toString())
+                }
+                // if the there is a file with the nextDir name, let it throw an exception
+                channel.cd(nextDir.toString())
+            }
+
+            // upload local library source files
+
+
+        } else { // download local library source files
+
+        }
+    }
+
+    override fun close() {
+        session.disconnect()
     }
 
 /* ----------------------------------------- Retrieving ----------------------------------------- */

@@ -35,6 +35,9 @@ dependencies {
 
     // https://mvnrepository.com/artifact/com.jcraft/jsch TODO check license
     implementation group: 'com.jcraft', name: 'jsch', version: '0.1.55'
+
+    // https://mvnrepository.com/artifact/commons-io/commons-io TODO check license
+    implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
 }
 
 jar {

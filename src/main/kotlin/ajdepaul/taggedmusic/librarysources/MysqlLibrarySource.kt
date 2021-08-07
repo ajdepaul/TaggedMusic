@@ -17,7 +17,7 @@ import java.sql.Connection
  * [LibrarySource] that is saved using a MySQL database server. Specifications on how to set up the
  * database can be found here: TODO.
  *
- * To read or write to the MySQL database, the connection must first be opened using [connect].
+ * The connection is opened using [dataSource] on instantiation.
  */
 class MysqlLibrarySource(
     /** [MysqlDataSource] for opening a connection to the MySQL server. */
@@ -41,23 +41,11 @@ class MysqlLibrarySource(
 //        conn.close()
 
     /** The current open connection to the MySQL server. null if the connection is closed. */
-    private var connection: Connection? = null
+    private var connection: Connection = dataSource.connection
 
-    /**
-     * Opens a connection to the MySQL server using the [dataSource] provided.
-     *
-     * The connection must be open to be able to read or write to the MySQL server.
-     */
-    fun connect() {
-        connection = dataSource.connection
-    }
-
-    /** Closes the connection to the currently connected to MySQL server using the [dataSource]. */
+    /** Closes the connection to the currently connected MySQL server. */
     override fun close() {
-        if (connection != null) {
-            connection!!.close()
-            connection = null
-        }
+        connection.close()
     }
 
 /* ----------------------------------------- Retrieving ----------------------------------------- */

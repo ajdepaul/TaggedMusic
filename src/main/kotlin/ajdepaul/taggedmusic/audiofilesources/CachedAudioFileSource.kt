@@ -4,20 +4,22 @@
  */
 package ajdepaul.taggedmusic.audiofilesources
 
+import java.nio.file.Path
+
 class CachedAudioFileSource : AudioFileSource {
-    override fun hasAudioFile(fileName: String): Boolean {
+    override fun hasAudioFile(fileName: Path): Boolean {
         TODO("Not yet implemented")
     }
 
-    override fun pushAudioFile(songPath: String, fileName: String): Boolean {
+    override fun pushAudioFile(songPath: Path, fileName: Path): Boolean {
         TODO("Not yet implemented")
     }
 
-    override fun pullAudioFile(fileName: String): String? {
+    override fun pullAudioFile(fileName: Path): Path? {
         TODO("Not yet implemented")
     }
 
-    override fun removeAudioFile(fileName: String): Boolean {
+    override fun removeAudioFile(fileName: Path): Boolean {
         TODO("Not yet implemented")
     }
 }

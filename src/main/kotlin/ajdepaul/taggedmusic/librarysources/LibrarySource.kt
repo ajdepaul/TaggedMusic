@@ -117,7 +117,7 @@ interface LibrarySource {
         /**
          * Applies the changes made from this [UpdateBuilder] onto the [LibrarySource].
          *
-         * *Not thread safe. Do not make other changes while this method is running.*
+         * *Not thread safe. Do not make other changes while this function is running.*
          */
         fun commit()
     }

@@ -4,11 +4,13 @@
  */
 package ajdepaul.taggedmusic.audiofilesources
 
+import java.nio.file.Path
+
 /** [AudioFileSource]s are used to retrieve audio files of songs by file name. */
 interface AudioFileSource {
 
     /** Checks if the [AudioFileSource] has the song available to pull. */
-    fun hasAudioFile(fileName: String): Boolean
+    fun hasAudioFile(fileName: Path): Boolean
 
     /**
      * Transfers an audio file from a local path onto the [AudioFileSource].
@@ -16,14 +18,14 @@ interface AudioFileSource {
      * @param fileName the file name the [AudioFileSource] will use to fetch this audio file
      * @return true if success, false if failed
      */
-    fun pushAudioFile(audioPath: String, fileName: String): Boolean
+    fun pushAudioFile(audioPath: Path, fileName: Path): Boolean
 
     /**
      * Fetches an audio file from the [AudioFileSource].
      * @return the local path to the song or null if failed
      */
-    fun pullAudioFile(fileName: String): String?
+    fun pullAudioFile(fileName: Path): Path?
 
     /** Deletes an audio file from the [AudioFileSource]. */
-    fun removeAudioFile(fileName: String): Boolean
+    fun removeAudioFile(fileName: Path): Boolean
 }

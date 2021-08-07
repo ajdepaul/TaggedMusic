@@ -14,15 +14,15 @@ import com.google.gson.GsonBuilder
 import com.google.gson.JsonIOException
 import com.google.gson.JsonSyntaxException
 import kotlinx.collections.immutable.*
-import java.io.File
 import java.io.IOException
+import java.nio.file.Path
 import java.time.LocalDateTime
 import java.util.*
 
 /**
  * [LibrarySource] that uses a JSON file to store [SongLibrary] data. Every read and write to this
  * [LibrarySource] will parse the entire JSON text, so it is recommended to use this with a
- * [CahedSongLibrary][ajdepaul.taggedmusic.songlibraries.CachedSongLibrary].
+ * [CachedSongLibrary][ajdepaul.taggedmusic.songlibraries.CachedSongLibrary].
  *
  * Every read or write can throw a [JsonIOException], [JsonSyntaxException], or [IOException] if
  * there is an issue with the JSON reader/writer, JSON file syntax, or reaching the file at
@@ -32,14 +32,14 @@ import java.util.*
  */
 class JsonLibrarySource(
     /** Local path to the [SongLibrary][ajdepaul.taggedmusic.songlibraries.SongLibrary]. */
-    var jsonFilePath: String
+    var jsonFilePath: Path
 ) : LibrarySource {
 
     /**
      * Creates an empty [JsonLibrarySource] and creates the json file to go along with it.
      * @param defaultTagType the initial default tag type for the [SongLibrary]
      */
-    constructor(jsonFilePath: String, defaultTagType: TagType) : this(jsonFilePath) {
+    constructor(jsonFilePath: Path, defaultTagType: TagType) : this(jsonFilePath) {
         writeJson(
             jsonFilePath,
             SongLibraryData(SongLibrary.VERSION, defaultTagType, mapOf(), mapOf(), mapOf())
@@ -111,7 +111,7 @@ class JsonLibrarySource(
     /** See [LibrarySource.UpdateBuilder]. */
     private class UpdateBuilder(
         val jsonLibrarySource: JsonLibrarySource,
-        val jsonFilePath: String
+        val jsonFilePath: Path
     ) : LibrarySource.UpdateBuilder {
 
         val updateQueue: Queue<LibrarySource.Update> = LinkedList()
@@ -224,8 +224,8 @@ class JsonLibrarySource(
          * @throws IOException if there was a problem reading the file at [jsonFilePath]
          */
         @Throws(JsonIOException::class, JsonSyntaxException::class, IOException::class)
-        fun readJson(jsonFilePath: String): SongLibraryData {
-            return File(jsonFilePath).reader().use {
+        fun readJson(jsonFilePath: Path): SongLibraryData {
+            return jsonFilePath.toFile().reader().use {
                 Gson().fromJson(it, SongLibraryData::class.java)
             }
         }
@@ -236,9 +236,9 @@ class JsonLibrarySource(
          * @throws IOException if there was a problem writing to the file at [jsonFilePath]
          */
         @Throws(JsonIOException::class, IOException::class)
-        fun writeJson(jsonFilePath: String, songLibraryData: SongLibraryData) {
+        fun writeJson(jsonFilePath: Path, songLibraryData: SongLibraryData) {
             val gson = GsonBuilder().setPrettyPrinting().create()
-            File(jsonFilePath).writer().use { gson.toJson(songLibraryData, it) }
+            jsonFilePath.toFile().writer().use { gson.toJson(songLibraryData, it) }
         }
 
         /** Converts [song] into [SongData]. */

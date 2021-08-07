@@ -6,22 +6,19 @@ package ajdepaul.taggedmusic.audiofilesources
 
 import java.io.File
 import java.io.IOException
-import java.nio.file.DirectoryNotEmptyException
-import java.nio.file.Files
-import java.nio.file.Paths
-import java.nio.file.StandardCopyOption
+import java.nio.file.*
 
 /** [AudioFileSource] that retrieves audio files from a local directory. */
-class LocalAudioFileSource(var songDirectory: String) : AudioFileSource {
+class LocalAudioFileSource(var songDirectory: Path) : AudioFileSource {
 
-    override fun hasAudioFile(fileName: String): Boolean {
-        return File(songDirectory).resolve(fileName).isFile
+    override fun hasAudioFile(fileName: Path): Boolean {
+        return songDirectory.resolve(fileName).toFile().isFile
     }
 
-    override fun pushAudioFile(songPath: String, fileName: String): Boolean {
-        val dest = File(songDirectory).resolve(fileName).toPath()
+    override fun pushAudioFile(songPath: Path, fileName: Path): Boolean {
+        val dest = songDirectory.resolve(fileName)
         return try {
-            Files.copy(Paths.get(songPath), dest, StandardCopyOption.REPLACE_EXISTING)
+            Files.copy(songPath, dest, StandardCopyOption.REPLACE_EXISTING)
             true
         } catch (_: DirectoryNotEmptyException) {
             false
@@ -32,14 +29,14 @@ class LocalAudioFileSource(var songDirectory: String) : AudioFileSource {
         }
     }
 
-    override fun pullAudioFile(fileName: String): String? {
-        val songFile = File(songDirectory).resolve(fileName)
-        return if (songFile.isFile) songFile.path else null
+    override fun pullAudioFile(fileName: Path): Path? {
+        val songFile = songDirectory.resolve(fileName)
+        return if (songFile.toFile().isFile) songFile else null
     }
 
-    override fun removeAudioFile(fileName: String): Boolean {
+    override fun removeAudioFile(fileName: Path): Boolean {
         return try {
-            File(songDirectory).resolve(fileName).delete()
+            songDirectory.resolve(fileName).toFile().delete()
         } catch (_: SecurityException) {
             false
         }

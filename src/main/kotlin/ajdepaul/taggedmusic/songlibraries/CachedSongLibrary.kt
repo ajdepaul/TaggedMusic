@@ -50,7 +50,7 @@ class CachedSongLibrary(librarySource: LibrarySource) : SongLibrary(librarySourc
     /**
      * Applies changes made through put or remove function to the [librarySource].
      *
-     * *Not thread safe. Do not make other changes while this method is running.*
+     * *Not thread safe. Do not make other changes while this function is running.*
      */
     fun commit() {
         librarySourceUpdater.commit()
