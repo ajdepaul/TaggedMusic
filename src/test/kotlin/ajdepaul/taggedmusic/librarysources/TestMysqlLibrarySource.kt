@@ -46,6 +46,7 @@ class TestMysqlLibrarySource {
     /** Restores the MySQL database back to its initial state. */
     private fun cleanServer() {
         val dataSource = createServerSession() ?: return
+//        TODO("Not yet implemented")
     }
 
     /** Tests the [MysqlDataSource] constructors. */
@@ -53,7 +54,7 @@ class TestMysqlLibrarySource {
     fun testConstructor() {
         if (createServerSession() == null) {
             println(
-                "[WARNING] SFTP library source test skipped. To run this test see " +
+                "[WARNING] MySQL library source test skipped. To run this test see " +
                         "`${testServerProperties}`."
             )
             return
@@ -75,7 +76,7 @@ class TestMysqlLibrarySource {
     fun testUpdater() {
         if (createServerSession() == null) {
             println(
-                "[WARNING] SFTP library source test skipped. To run this test see " +
+                "[WARNING] MySQL library source test skipped. To run this test see " +
                         "`${testServerProperties}`."
             )
             return

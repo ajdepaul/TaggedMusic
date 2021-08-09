@@ -36,14 +36,20 @@ class MysqlLibrarySource(
 
     override fun getVersion(): String {
         return with(connection.createStatement()) {
-            with(this.executeQuery("SELECT * FROM library")) {
+            with(this.executeQuery("SELECT * FROM library;")) {
+                this.first()
                 this.getString("version")
             }
         }
     }
 
     override fun getDefaultTagType(): TagType {
-        TODO("Not yet implemented")
+        return with(connection.createStatement()) {
+            with(this.executeQuery("SELECT * FROM default_tag_type")) {
+                this.first()
+                TagType(this.getInt("color"))
+            }
+        }
     }
 
     override fun hasSong(fileName: String): Boolean {
