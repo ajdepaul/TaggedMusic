@@ -9,17 +9,23 @@ import com.jcraft.jsch.ChannelSftp
 import com.jcraft.jsch.JSch
 import com.jcraft.jsch.Session
 import org.apache.commons.io.FileUtils
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import java.nio.file.Paths
 import java.util.*
 
 class TestSftpLibrarySource {
 
     /** Local directory for temporary files for this set of tests. */
-    private val sharedTestDir = Paths.get("test", "librarysources", "TestSftpLibrarySource")
+//    private val sharedTestDir = Paths.get("test", "librarysources", "TestSftpLibrarySource")
+
+    @Rule
+    @JvmField
+    val tempDir = TemporaryFolder()
 
     /** SFTP remote directory for temporary files for this set of tests. */
-    private val sharedSftpTestDir = Paths.get(".test_tagged_music")
+    private val remoteTempDir = Paths.get(".test_tagged_music")
 
     private val testServerProperties = this.javaClass.getResource(
         Paths.get("TestSftpLibrarySource", "server.properties").toString()
@@ -84,7 +90,7 @@ class TestSftpLibrarySource {
                 channel.rmdir(dirName)
             }
 
-            emptyDir(sharedSftpTestDir.toString())
+            emptyDir(remoteTempDir.toString())
 
         } finally {
             session.disconnect()
@@ -95,16 +101,15 @@ class TestSftpLibrarySource {
     @Test
     fun testConstructor() {
         try {
-            val testDir = sharedTestDir.resolve("testConstructor")
-            FileUtils.forceMkdir(testDir.toFile())
-            val jsonLibraryFilePath = testDir.resolve("library.json")
+            val sftpDir = tempDir.newFolder("sftpDir").toPath()
+            val jsonLibraryFilePath = tempDir.newFile("sftpDir/library.json").toPath()
 
             // initialize the server with default values
             SftpLibrarySource(
                 createServerSession() ?: return,
                 listOf(Paths.get("library.json")),
-                testDir,
-                sharedSftpTestDir.resolve(Paths.get("test1", "test")),
+                sftpDir,
+                remoteTempDir.resolve(Paths.get("test1", "test")),
                 JsonLibrarySource(jsonLibraryFilePath, TagType(0)),
                 true
             ).close()
@@ -116,8 +121,8 @@ class TestSftpLibrarySource {
                 SftpLibrarySource(
                     createServerSession() ?: return,
                     listOf(Paths.get("library.json")),
-                    testDir,
-                    sharedSftpTestDir.resolve(Paths.get("test1", "test")),
+                    sftpDir,
+                    remoteTempDir.resolve(Paths.get("test1", "test")),
                     JsonLibrarySource(jsonLibraryFilePath)
                 )
             ) {
@@ -133,17 +138,16 @@ class TestSftpLibrarySource {
     @Test
     fun testUpdater() {
         try {
-            val testDir = sharedTestDir.resolve("testUpdater")
-            FileUtils.forceMkdir(testDir.toFile())
-            val jsonLibraryFilePath = testDir.resolve("library.json")
+            val sftpDir = tempDir.newFolder("sftpDir").toPath()
+            val jsonLibraryFilePath = tempDir.newFile("sftpDir/library.json").toPath()
 
             // test making changes
             val songLibraryData = with(
                 SftpLibrarySource(
                     createServerSession() ?: return,
                     listOf(Paths.get("library.json")),
-                    testDir,
-                    sharedSftpTestDir.resolve(Paths.get("test2")),
+                    sftpDir,
+                    remoteTempDir.resolve(Paths.get("test2")),
                     JsonLibrarySource(jsonLibraryFilePath, TagType(0)),
                     true
                 )
@@ -156,8 +160,8 @@ class TestSftpLibrarySource {
                 SftpLibrarySource(
                     createServerSession() ?: return,
                     listOf(Paths.get("library.json")),
-                    testDir,
-                    sharedSftpTestDir.resolve(Paths.get("test2")),
+                    sftpDir,
+                    remoteTempDir.resolve(Paths.get("test2")),
                     JsonLibrarySource(jsonLibraryFilePath)
                 )
             ) {

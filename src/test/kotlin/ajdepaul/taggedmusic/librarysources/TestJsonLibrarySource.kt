@@ -5,21 +5,20 @@
 package ajdepaul.taggedmusic.librarysources
 
 import ajdepaul.taggedmusic.TagType
-import org.apache.commons.io.FileUtils
+import org.junit.Rule
 import org.junit.Test
-import java.nio.file.Paths
+import org.junit.rules.TemporaryFolder
 
 class TestJsonLibrarySource {
 
-    /** Directory for temporary files for this set of tests. */
-    private val sharedTestDir = Paths.get("test", "librarysources", "TestJsonLibrarySource")
+    @Rule
+    @JvmField
+    val tempDir = TemporaryFolder()
 
     /** Tests the [JsonLibrarySource] constructors. */
     @Test
     fun testConstructor() {
-        val testDir = sharedTestDir.resolve("testConstructor")
-        FileUtils.forceMkdir(testDir.toFile())
-        val jsonFilePath = testDir.resolve("library.json")
+        val jsonFilePath = tempDir.newFile().toPath()
 
         // initial text to test the text is overwritten
         jsonFilePath.toFile().writeText("bad text")
@@ -34,9 +33,7 @@ class TestJsonLibrarySource {
     /** Tests [JsonLibrarySource.updater]. */
     @Test
     fun testUpdater() {
-        val testDir = sharedTestDir.resolve("testUpdater")
-        FileUtils.forceMkdir(testDir.toFile())
-        val jsonFilePath = testDir.resolve("library.json")
+        val jsonFilePath = tempDir.newFile().toPath()
 
         // test making changes
         val songLibraryData =
