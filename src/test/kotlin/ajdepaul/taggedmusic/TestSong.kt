@@ -39,6 +39,7 @@ class TestSong {
     @Test
     fun testMutate() {
         var song = Song("title", 1000)
+        val dateCreated = song.dateCreated
         var before = song.lastModified
         val delay = 1L
 
@@ -126,5 +127,7 @@ class TestSong {
         assertEquals(3, song.playCount)
         assertEquals(1980, song.year)
         assertEquals(3, song.trackNum)
+
+        assertEquals(dateCreated, song.dateCreated)
     }
 }

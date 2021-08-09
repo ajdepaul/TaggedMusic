@@ -245,7 +245,7 @@ class JsonLibrarySource(
         fun songToJsonData(song: Song): SongData {
             return SongData(
                 song.title, song.duration, song.artist, song.album, song.trackNum, song.year,
-                song.lastModified.toString(), song.playCount, song.tags
+                song.dateCreated.toString(), song.lastModified.toString(), song.playCount, song.tags
             )
         }
 
@@ -264,16 +264,16 @@ class JsonLibrarySource(
         /** [Song] data stored in a format for reading/writing JSON strings. */
         data class SongData(
             val title: String, val duration: Int, val artist: String?, val album: String?,
-            val trackNum: Int?, val year: Int?, val lastModified: String, val playCount: Int,
-            val tags: Set<String>
+            val trackNum: Int?, val year: Int?, val dateCreated: String, val lastModified: String,
+            val playCount: Int, val tags: Set<String>
         ) {
 
             /** Converts this [SongData] into a [Song]. */
             fun toSong(): Song {
                 return Song(
                     this.title, this.duration, this.artist, this.album, this.trackNum, this.year,
-                    LocalDateTime.parse(this.lastModified), this.playCount,
-                    this.tags.toPersistentHashSet()
+                    LocalDateTime.parse(this.dateCreated), LocalDateTime.parse(this.lastModified),
+                    this.playCount, this.tags.toPersistentHashSet()
                 )
             }
         }

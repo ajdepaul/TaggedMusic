@@ -8,12 +8,7 @@ import kotlinx.collections.immutable.PersistentSet
 import kotlinx.collections.immutable.persistentHashSetOf
 import java.time.LocalDateTime
 
-// TODO add dateAdded & make artist nullable
-
-/**
- * All the data stored about a single [Song]. Cannot be converted to json directly. Use [toJsonData]
- * for a json friendly format.
- */
+/** All the data stored about a single [Song]. */
 data class Song constructor(
     val title: String,
     val duration: Int,
@@ -21,6 +16,7 @@ data class Song constructor(
     val album: String? = null,
     val trackNum: Int? = null,
     val year: Int? = null,
+    val dateCreated: LocalDateTime = LocalDateTime.now(),
     val lastModified: LocalDateTime = LocalDateTime.now(),
     val playCount: Int = 0,
     val tags: PersistentSet<String> = persistentHashSetOf()
@@ -49,6 +45,7 @@ data class Song constructor(
                 album,
                 trackNum,
                 year,
+                song.dateCreated,
                 if (updateLastModified) LocalDateTime.now() else song.lastModified,
                 playCount,
                 tags
