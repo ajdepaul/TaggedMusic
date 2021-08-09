@@ -7,7 +7,6 @@ package ajdepaul.taggedmusic.librarysources
 import ajdepaul.taggedmusic.TagType
 import org.apache.commons.io.FileUtils
 import org.junit.Test
-import java.io.File
 import java.nio.file.Paths
 
 class TestJsonLibrarySource {
@@ -18,7 +17,7 @@ class TestJsonLibrarySource {
     /** Tests the [JsonLibrarySource] constructors. */
     @Test
     fun testConstructor() {
-        val testDir = sharedTestDir.resolve("testCreateJsonFileConstructor")
+        val testDir = sharedTestDir.resolve("testConstructor")
         FileUtils.forceMkdir(testDir.toFile())
         val jsonFilePath = testDir.resolve("library.json")
 
@@ -39,6 +38,11 @@ class TestJsonLibrarySource {
         FileUtils.forceMkdir(testDir.toFile())
         val jsonFilePath = testDir.resolve("library.json")
 
-        TestLibrarySourceUtil.assertUpdates(JsonLibrarySource(jsonFilePath, TagType(0)))
+        // test making changes
+        val songLibraryData =
+            TestLibrarySourceUtil.assertUpdates(JsonLibrarySource(jsonFilePath, TagType(0)))
+
+        // test changes were saved
+        TestLibrarySourceUtil.assertUpdated(JsonLibrarySource(jsonFilePath), songLibraryData)
     }
 }

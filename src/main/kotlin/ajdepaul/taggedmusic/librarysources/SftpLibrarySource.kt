@@ -13,7 +13,6 @@ import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.PersistentSet
 import org.apache.commons.io.FileUtils
 import java.io.Closeable
-import java.io.File
 import java.nio.file.Path
 
 /**
@@ -68,7 +67,7 @@ class SftpLibrarySource(
 
         // remote working directory
         if (initialize) {
-            // create remote directory one directory at a time
+            // create remote directory one directory at a time & cd into it
             for (nextDir in remoteDirectory) {
                 // check if the next directory exists
                 if (channel.ls(".")
@@ -82,11 +81,18 @@ class SftpLibrarySource(
                 channel.cd(nextDir.toString())
             }
 
-            // upload local library source files
+            // upload local library required files
+            for (f in requiredFiles) {
+                channel.put(f.toString(), f.toString())
+            }
 
+        } else {
+            channel.cd(remoteDirectory.toString())
 
-        } else { // download local library source files
-
+            // download local library required files
+            for (f in requiredFiles) {
+                channel.get(f.toString(), f.toString())
+            }
         }
     }
 
@@ -150,48 +156,61 @@ class SftpLibrarySource(
 /* ------------------------------------------ Updating ------------------------------------------ */
 
     override fun updater(): LibrarySource.UpdateBuilder {
-        return UpdateBuilder(localLibrarySource.updater())
+        return UpdateBuilder(channel, requiredFiles, localLibrarySource.updater())
     }
 
     /** See [LibrarySource.UpdateBuilder]. */
     private class UpdateBuilder(
-        val localLibrarySourceUpdater: LibrarySource.UpdateBuilder
+        private val channel: ChannelSftp,
+        private val requiredFiles: Iterable<Path>,
+        private val localLibrarySourceUpdater: LibrarySource.UpdateBuilder
     ) : LibrarySource.UpdateBuilder {
 
         override fun setDefaultTagType(tagType: TagType): LibrarySource.UpdateBuilder {
-            return localLibrarySourceUpdater.setDefaultTagType(tagType)
+            localLibrarySourceUpdater.setDefaultTagType(tagType)
+            return this
         }
 
         override fun putSong(fileName: String, song: Song): LibrarySource.UpdateBuilder {
-            return localLibrarySourceUpdater.putSong(fileName, song)
+            localLibrarySourceUpdater.putSong(fileName, song)
+            return this
         }
 
         override fun removeSong(fileName: String): LibrarySource.UpdateBuilder {
-            return localLibrarySourceUpdater.removeSong(fileName)
+            localLibrarySourceUpdater.removeSong(fileName)
+            return this
         }
 
         override fun putTag(tagName: String, tag: Tag): LibrarySource.UpdateBuilder {
-            return localLibrarySourceUpdater.putTag(tagName, tag)
+            localLibrarySourceUpdater.putTag(tagName, tag)
+            return this
         }
 
         override fun removeTag(tagName: String): LibrarySource.UpdateBuilder {
-            return localLibrarySourceUpdater.removeTag(tagName)
+            localLibrarySourceUpdater.removeTag(tagName)
+            return this
         }
 
         override fun putTagType(
             tagTypeName: String,
             tagType: TagType
         ): LibrarySource.UpdateBuilder {
-            return localLibrarySourceUpdater.putTagType(tagTypeName, tagType)
+            localLibrarySourceUpdater.putTagType(tagTypeName, tagType)
+            return this
         }
 
         override fun removeTagType(tagTypeName: String): LibrarySource.UpdateBuilder {
-            return localLibrarySourceUpdater.removeTagType(tagTypeName)
+            localLibrarySourceUpdater.removeTagType(tagTypeName)
+            return this
         }
 
         override fun commit() {
             localLibrarySourceUpdater.commit()
-            TODO("Update SFTP server")
+
+            // upload local library required files
+            for (f in requiredFiles) {
+                channel.put(f.toString(), f.toString())
+            }
         }
     }
 }

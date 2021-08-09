@@ -114,11 +114,7 @@ interface LibrarySource {
          */
         fun removeTagType(tagTypeName: String): UpdateBuilder
 
-        /**
-         * Applies the changes made from this [UpdateBuilder] onto the [LibrarySource].
-         *
-         * *Not thread safe. Do not make other changes while this function is running.*
-         */
+        /** Applies the changes made from this [UpdateBuilder] onto the [LibrarySource]. */
         fun commit()
     }
 

@@ -34,8 +34,9 @@ class TestLibrarySourceUtil {
         /**
          * Asserts that [librarySource] properly updates the default tag type, songs map, tags map,
          * and tag types map.
+         * @return the expected [SongLibraryData] for the librarySource; see [assertUpdated]
          */
-        fun assertUpdates(librarySource: LibrarySource) {
+        fun assertUpdates(librarySource: LibrarySource): SongLibraryData {
             val song1 = Song("title1", 1000, "artist1")
             val song2 = Song("title2", 1000, "artist2", tags = persistentHashSetOf("tag3"))
 
@@ -73,6 +74,42 @@ class TestLibrarySourceUtil {
             // unchanged
             assertEquals(TagType(101), librarySource.getTagType("type1"))
             assertEquals(Tag(null), librarySource.getTag("tag1"))
+
+            return SongLibraryData(
+                librarySource.getDefaultTagType(),
+                librarySource.getAllSongs(),
+                librarySource.getAllTags(),
+                librarySource.getAllTagTypes()
+            )
+        }
+
+        /**
+         * Asserts that [librarySource] matches [songLibraryData]. Intended to be used in
+         * conjunction with [assertUpdates] on a new [LibrarySource] to make sure the new source
+         * loads values properly.
+         */
+        fun assertUpdated(librarySource: LibrarySource, songLibraryData: SongLibraryData) {
+            assertEquals(songLibraryData.defaultTagType, librarySource.getDefaultTagType())
+            assertEquals(songLibraryData.songs.size, librarySource.getAllSongs().size)
+            for (entry in songLibraryData.songs) {
+                assertEquals(entry.value, librarySource.getSong(entry.key))
+            }
+            assertEquals(songLibraryData.tags.size, librarySource.getAllTags().size)
+            for (entry in songLibraryData.tags) {
+                assertEquals(entry.value, librarySource.getTag(entry.key))
+            }
+            assertEquals(songLibraryData.tagTypes.size, librarySource.getAllTagTypes().size)
+            for (entry in songLibraryData.tagTypes) {
+                assertEquals(entry.value, librarySource.getTagType(entry.key))
+            }
         }
     }
+
+    /** Stores all the important data that makes up a [SongLibrary]. */
+    data class SongLibraryData(
+        val defaultTagType: TagType,
+        val songs: Map<String, Song>,
+        val tags: Map<String, Tag>,
+        val tagTypes: Map<String, TagType>
+    )
 }
