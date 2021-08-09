@@ -14,31 +14,15 @@ import java.io.Closeable
 import java.sql.Connection
 
 /**
- * [LibrarySource] that is saved using a MySQL database server. Specifications on how to set up the
- * database can be found here: TODO.
- *
- * The connection is opened using [dataSource] on instantiation.
+ * [LibrarySource] that is saved using a MySQL database server. The provided `mysql_init.sql` can be
+ * used to initialize the MySQL server with the required tables. The connection is opened using
+ * [dataSource] on instantiation.
+ * @throws java.sql.SQLException if there is an issue connecting to or updating the MySQL server
  */
 class MysqlLibrarySource(
     /** [MysqlDataSource] for opening a connection to the MySQL server. */
     private val dataSource: MysqlDataSource
 ) : LibrarySource, Closeable {
-
-//    val ds = MysqlDataSource()
-//        ds.serverName = "10.0.0.25"
-//        ds.databaseName = "tm-db"
-//        ds.port = 1258
-//        ds.user = "root"
-//        ds.setPassword("tv3RTHND2FxojH")
-//
-//        val conn = ds.connection
-//        val stmt = conn.createStatement()
-//        val rs = stmt.executeQuery("SELECT * FROM library")
-//        rs.next()
-//        println(rs.getInt(1))
-//        rs.close()
-//        stmt.close()
-//        conn.close()
 
     /** The current open connection to the MySQL server. null if the connection is closed. */
     private var connection: Connection = dataSource.connection
@@ -51,7 +35,11 @@ class MysqlLibrarySource(
 /* ----------------------------------------- Retrieving ----------------------------------------- */
 
     override fun getVersion(): String {
-        TODO("Not yet implemented")
+        return with(connection.createStatement()) {
+            with(this.executeQuery("SELECT * FROM library")) {
+                this.getString("version")
+            }
+        }
     }
 
     override fun getDefaultTagType(): TagType {
@@ -104,6 +92,45 @@ class MysqlLibrarySource(
 /* ------------------------------------------ Updating ------------------------------------------ */
 
     override fun updater(): LibrarySource.UpdateBuilder {
-        TODO("Not yet implemented")
+        return UpdateBuilder()
+    }
+
+    /** See [LibrarySource.UpdateBuilder]. */
+    private class UpdateBuilder : LibrarySource.UpdateBuilder {
+
+        override fun setDefaultTagType(tagType: TagType): LibrarySource.UpdateBuilder {
+            TODO("Not yet implemented")
+        }
+
+        override fun putSong(fileName: String, song: Song): LibrarySource.UpdateBuilder {
+            TODO("Not yet implemented")
+        }
+
+        override fun removeSong(fileName: String): LibrarySource.UpdateBuilder {
+            TODO("Not yet implemented")
+        }
+
+        override fun putTag(tagName: String, tag: Tag): LibrarySource.UpdateBuilder {
+            TODO("Not yet implemented")
+        }
+
+        override fun removeTag(tagName: String): LibrarySource.UpdateBuilder {
+            TODO("Not yet implemented")
+        }
+
+        override fun putTagType(
+            tagTypeName: String,
+            tagType: TagType
+        ): LibrarySource.UpdateBuilder {
+            TODO("Not yet implemented")
+        }
+
+        override fun removeTagType(tagTypeName: String): LibrarySource.UpdateBuilder {
+            TODO("Not yet implemented")
+        }
+
+        override fun commit() {
+            TODO("Not yet implemented")
+        }
     }
 }

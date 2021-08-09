@@ -8,7 +8,6 @@ import ajdepaul.taggedmusic.TagType
 import com.jcraft.jsch.ChannelSftp
 import com.jcraft.jsch.JSch
 import com.jcraft.jsch.Session
-import org.apache.commons.io.FileUtils
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -16,9 +15,6 @@ import java.nio.file.Paths
 import java.util.*
 
 class TestSftpLibrarySource {
-
-    /** Local directory for temporary files for this set of tests. */
-//    private val sharedTestDir = Paths.get("test", "librarysources", "TestSftpLibrarySource")
 
     @Rule
     @JvmField
@@ -40,10 +36,6 @@ class TestSftpLibrarySource {
         prop.load(testServerProperties!!.openStream())
 
         if (prop.getProperty("test") != "true") {
-            println(
-                "[WARNING] SFTP library source test skipped. To run this test see " +
-                        "`${testServerProperties}`."
-            )
             return null
         }
 
@@ -100,6 +92,14 @@ class TestSftpLibrarySource {
     /** Tests the [SftpLibrarySource] constructors. */
     @Test
     fun testConstructor() {
+        if (createServerSession() == null) {
+            println(
+                "[WARNING] SFTP library source test skipped. To run this test see " +
+                        "`${testServerProperties}`."
+            )
+            return
+        }
+
         try {
             val sftpDir = tempDir.newFolder("sftpDir").toPath()
             val jsonLibraryFilePath = tempDir.newFile("sftpDir/library.json").toPath()
@@ -137,6 +137,14 @@ class TestSftpLibrarySource {
     /** Tests [SftpLibrarySource.updater]. */
     @Test
     fun testUpdater() {
+        if (createServerSession() == null) {
+            println(
+                "[WARNING] SFTP library source test skipped. To run this test see " +
+                        "`${testServerProperties}`."
+            )
+            return
+        }
+
         try {
             val sftpDir = tempDir.newFolder("sftpDir").toPath()
             val jsonLibraryFilePath = tempDir.newFile("sftpDir/library.json").toPath()
