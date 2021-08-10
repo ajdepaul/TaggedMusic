@@ -42,7 +42,7 @@ class TestMysqlLibrarySource {
         dataSource.port = prop.getProperty("port")?.toInt() ?: 3306
         dataSource.user = prop.getProperty("username")
         dataSource.setPassword(prop.getProperty("password"))
-        dataSource.databaseName = prop.getProperty("database_name") ?: "tagged_music"
+        dataSource.databaseName = tempDatabase
 
         return dataSource
     }
