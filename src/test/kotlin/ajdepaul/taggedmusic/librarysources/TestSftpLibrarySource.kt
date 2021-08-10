@@ -20,12 +20,12 @@ class TestSftpLibrarySource {
     @JvmField
     val tempDir = TemporaryFolder()
 
-    /** SFTP remote directory for temporary files for this set of tests. */
-    private val remoteTempDir = Paths.get(".test_tagged_music")
-
     private val testServerProperties = this.javaClass.getResource(
         Paths.get("TestSftpLibrarySource", "server.properties").toString()
     )
+
+    /** SFTP remote directory for temporary files for this set of tests. */
+    private val remoteTempDir = Paths.get(".test_tagged_music")
 
     /**
      * Get the test server information from the server.properties resource.

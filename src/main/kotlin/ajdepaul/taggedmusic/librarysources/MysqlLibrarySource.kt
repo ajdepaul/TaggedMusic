@@ -7,15 +7,16 @@ package ajdepaul.taggedmusic.librarysources
 import ajdepaul.taggedmusic.Song
 import ajdepaul.taggedmusic.Tag
 import ajdepaul.taggedmusic.TagType
+import ajdepaul.taggedmusic.songlibraries.SongLibrary
 import com.mysql.jdbc.jdbc2.optional.MysqlDataSource
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.PersistentSet
 import java.io.Closeable
+import java.nio.file.Paths
 import java.sql.Connection
 
 /**
- * [LibrarySource] that is saved using a MySQL database server. The provided `mysql_init.sql` can be
- * used to initialize the MySQL server with the required tables. The connection is opened using
+ * [LibrarySource] that is saved using a MySQL database server. The connection is opened using
  * [dataSource] on instantiation.
  * @throws java.sql.SQLException if there is an issue connecting to or updating the MySQL server
  */
@@ -26,6 +27,25 @@ class MysqlLibrarySource(
 
     /** The current open connection to the MySQL server. null if the connection is closed. */
     private var connection: Connection = dataSource.connection
+
+    /**
+     * Creates an empty [MysqlLibrarySource] and initializes the MySQL server with the required
+     * database.
+     * @param defaultTagType the initial default tag type for the [SongLibrary]
+     */
+    constructor(dataSource: MysqlDataSource, defaultTagType: TagType) : this(dataSource) {
+        val libraryInitScript = this.javaClass.getResource(
+            Paths.get("MysqlLibrarySource", "library_init.sql").toString()
+        )
+            .readText()
+            .replace("<<database_name>>", dataSource.databaseName)
+            .replace("<<version>>", SongLibrary.VERSION)
+            .replace("<<default_tag_type_color>>", defaultTagType.color.toString())
+
+        with(connection.createStatement()) {
+            this.execute("SOURCE $libraryInitScript;")
+        }
+    }
 
     /** Closes the connection to the currently connected MySQL server. */
     override fun close() {

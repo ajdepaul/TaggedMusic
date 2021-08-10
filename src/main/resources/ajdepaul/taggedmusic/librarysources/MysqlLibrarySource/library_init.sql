@@ -1,19 +1,19 @@
 -- Script for initializing a MySQL server with a database that can be used as a MysqlLibrarySource.
--- You can change the database name on lines 4 and 5 and the initial default tag type values on line
--- 16.
+-- <<database_name>>, <<version>>, and <<default_tag_type_color>> will be replaced by the
+-- MysqlLibrarySource initialization constructor.
 
-CREATE DATABASE tagged_music;
-USE tagged_music;
+CREATE DATABASE <<database_name>>;
+USE <<database_name>>;
 
 CREATE TABLE library (
     version VARCHAR(255) PRIMARY KEY
 );
-INSERT INTO library VALUES ("1.0");
+INSERT INTO library VALUES ("<<version>>");
 
 CREATE TABLE default_tag_type (
-    color INT PRIMARY KEY
+    <<default_tag_type_color>> INT PRIMARY KEY
 );
-INSERT INTO default_tag_type VALUES (0);
+INSERT INTO default_tag_type VALUES (<<default_tag_type_color>>);
 
 CREATE TABLE songs (
     file_name VARCHAR(255) PRIMARY KEY,

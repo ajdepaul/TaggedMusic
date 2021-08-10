@@ -4,6 +4,7 @@
  */
 package ajdepaul.taggedmusic.librarysources
 
+import ajdepaul.taggedmusic.TagType
 import com.mysql.jdbc.jdbc2.optional.MysqlDataSource
 import org.junit.Rule
 import org.junit.Test
@@ -20,6 +21,9 @@ class TestMysqlLibrarySource {
     private val testServerProperties = this.javaClass.getResource(
         Paths.get("TestMysqlLibrarySource", "server.properties").toString()
     )
+
+    /** Name the tests should use for the temporary testing database. */
+    private val tempDatabase = "test_tagged_music"
 
     /**
      * Get the test server information from the server.properties resource.
@@ -43,10 +47,15 @@ class TestMysqlLibrarySource {
         return dataSource
     }
 
-    /** Restores the MySQL database back to its initial state. */
+    /** Drops the [tempDatabase] database from the MySQL server. */
     private fun cleanServer() {
         val dataSource = createServerSession() ?: return
-//        TODO("Not yet implemented")
+
+        with (dataSource.connection) {
+            with(this.createStatement()) {
+                this.execute("DROP DATABASE $tempDatabase;")
+            }
+        }
     }
 
     /** Tests the [MysqlDataSource] constructors. */
@@ -61,7 +70,10 @@ class TestMysqlLibrarySource {
         }
 
         try {
-            // check defaults
+            // initialize the server with default values
+            MysqlLibrarySource(createServerSession() ?: return, TagType(0)).close()
+
+            // test new library source using that server
             with (MysqlLibrarySource(createServerSession() ?: return)) {
                 TestLibrarySourceUtil.assertDefaults(this)
             }
