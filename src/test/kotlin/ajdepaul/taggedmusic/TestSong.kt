@@ -27,8 +27,6 @@ class TestSong {
         var song = Song("title", 1000)
         assertEquals("title", song.title)
         assertEquals(1000, song.duration)
-        assertEquals(null, song.album)
-        assertEquals(null, song.artist)
         assertEquals(null, song.trackNum)
         assertEquals(null, song.year)
         assertEquals(0, song.playCount)
@@ -55,16 +53,6 @@ class TestSong {
         assertEquals(2000, song.duration)
 
         Thread.sleep(delay)
-        song = song.mutate { artist = "artist" }
-        before = assertUpdated(before, song.lastModified)
-        assertEquals("artist", song.artist)
-
-        Thread.sleep(delay)
-        song = song.mutate { album = "album" }
-        before = assertUpdated(before, song.lastModified)
-        assertEquals("album", song.album)
-
-        Thread.sleep(delay)
         song = song.mutate { trackNum = 1 }
         before = assertUpdated(before, song.lastModified)
         assertEquals(1, song.trackNum)
@@ -86,16 +74,14 @@ class TestSong {
 
         // multiple mutates
         Thread.sleep(delay)
-        song = song.mutate { duration = 3000; year = 2010; album = "album2" }
+        song = song.mutate { duration = 3000; year = 2010; }
         before = assertUpdated(before, song.lastModified)
         assertEquals(3000, song.duration)
         assertEquals(2010, song.year)
-        assertEquals("album2", song.album)
 
         Thread.sleep(delay)
-        song = song.mutate { artist = "artist2"; title = "title3"; tags = persistentHashSetOf("A", "C", "D") }
+        song = song.mutate { title = "title3"; tags = persistentHashSetOf("A", "C", "D") }
         before = assertUpdated(before, song.lastModified)
-        assertEquals("artist2", song.artist)
         assertEquals("title3", song.title)
         assertEquals(persistentHashSetOf("A", "C", "D"), song.tags)
 
@@ -108,16 +94,14 @@ class TestSong {
 
         // don't update last modified
         Thread.sleep(delay)
-        song = song.mutate(false) { duration = 4000; year = 1990; album = "album3" }
+        song = song.mutate(false) { duration = 4000; year = 1990; }
         assertEquals(before, song.lastModified)
         assertEquals(4000, song.duration)
         assertEquals(1990, song.year)
-        assertEquals("album3", song.album)
 
         Thread.sleep(delay)
-        song = song.mutate(false) { artist = "artist3"; title = "title4"; tags = persistentHashSetOf("B", "D", "E") }
+        song = song.mutate(false) { title = "title4"; tags = persistentHashSetOf("B", "D", "E") }
         assertEquals(before, song.lastModified)
-        assertEquals("artist3", song.artist)
         assertEquals("title4", song.title)
         assertEquals(persistentHashSetOf("B", "D", "E"), song.tags)
 

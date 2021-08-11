@@ -47,6 +47,9 @@ class CachedSongLibrary(librarySource: LibrarySource) : SongLibrary(librarySourc
     /** [PersistentMap] of all the [TagType]s in this [SongLibrary]. */
     private var tagTypes: PersistentMap<String, TagType> = librarySource.getAllTagTypes()
 
+    /** [PersistentMap] of all the data [String]s in this [SongLibrary]. */
+    private var data: PersistentMap<String, String> = librarySource.getAllData()
+
     /**
      * Applies changes made through put or remove function to the [librarySource].
      *
@@ -148,5 +151,29 @@ class CachedSongLibrary(librarySource: LibrarySource) : SongLibrary(librarySourc
 
     override fun getAllTagTypes(): PersistentMap<String, TagType> {
         return tagTypes
+    }
+
+/* -------------------------------------------- Data -------------------------------------------- */
+
+    override fun _putData(key: String, value: String) {
+        librarySourceUpdater.putData(key, value)
+        data += key to value
+    }
+
+    override fun _removeData(key: String) {
+        librarySourceUpdater.removeData(key)
+        data -= key
+    }
+
+    override fun _hasData(key: String): Boolean {
+        return key in data
+    }
+
+    override fun _getData(key: String): String? {
+        return data[key]
+    }
+
+    override fun getAllData(): PersistentMap<String, String> {
+        return data
     }
 }

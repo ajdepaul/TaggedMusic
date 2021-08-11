@@ -109,4 +109,28 @@ class CachelessSongLibrary(librarySource: LibrarySource) : SongLibrary(librarySo
     override fun getAllTagTypes(): PersistentMap<String, TagType> {
         return librarySource.getAllTagTypes()
     }
+
+/* -------------------------------------------- Data -------------------------------------------- */
+
+    override fun _putData(key: String, value: String) {
+        librarySourceUpdater.putData(key, value)
+        librarySourceUpdater.commit()
+    }
+
+    override fun _removeData(key: String) {
+        librarySourceUpdater.removeData(key)
+        librarySourceUpdater.commit()
+    }
+
+    override fun _hasData(key: String): Boolean {
+        return librarySource.hasData(key)
+    }
+
+    override fun _getData(key: String): String? {
+        return librarySource.getData(key)
+    }
+
+    override fun getAllData(): PersistentMap<String, String> {
+        return librarySource.getAllData()
+    }
 }

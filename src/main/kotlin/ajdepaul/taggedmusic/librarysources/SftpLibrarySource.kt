@@ -43,7 +43,7 @@ class SftpLibrarySource(
     /**
      * Path to a directory on the SFTP server where the [localLibrarySource]'s files can be stored.
      */
-    private val remoteDirectory: Path,
+    remoteDirectory: Path,
     /** The wrapped [LibrarySource] that relies on the files fetched from the SFTP server. */
     private val localLibrarySource: LibrarySource,
     /**
@@ -111,7 +111,7 @@ class SftpLibrarySource(
     }
 
     override fun hasSong(fileName: String): Boolean {
-        return localLibrarySource.hasTag(fileName)
+        return localLibrarySource.hasSong(fileName)
     }
 
     override fun getSong(fileName: String): Song? {
@@ -151,6 +151,18 @@ class SftpLibrarySource(
 
     override fun getAllTagTypes(): PersistentMap<String, TagType> {
         return localLibrarySource.getAllTagTypes()
+    }
+
+    override fun hasData(key: String): Boolean {
+        return localLibrarySource.hasData(key)
+    }
+
+    override fun getData(key: String): String? {
+        return localLibrarySource.getData(key)
+    }
+
+    override fun getAllData(): PersistentMap<String, String> {
+        return localLibrarySource.getAllData()
     }
 
 /* ------------------------------------------ Updating ------------------------------------------ */
@@ -201,6 +213,16 @@ class SftpLibrarySource(
 
         override fun removeTagType(tagTypeName: String): LibrarySource.UpdateBuilder {
             localLibrarySourceUpdater.removeTagType(tagTypeName)
+            return this
+        }
+
+        override fun putData(key: String, value: String): LibrarySource.UpdateBuilder {
+            localLibrarySourceUpdater.putData(key, value)
+            return this
+        }
+
+        override fun removeData(key: String): LibrarySource.UpdateBuilder {
+            localLibrarySourceUpdater.removeData(key)
             return this
         }
 

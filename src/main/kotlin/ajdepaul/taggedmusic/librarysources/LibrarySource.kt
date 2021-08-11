@@ -56,6 +56,15 @@ interface LibrarySource {
     /** See [SongLibrary.getAllTagTypes]. */
     fun getAllTagTypes(): PersistentMap<String, TagType>
 
+    /** See [SongLibrary.hasData]. */
+    fun hasData(key: String): Boolean
+
+    /** See [SongLibrary.getData]. */
+    fun getData(key: String): String?
+
+    /** See [SongLibrary.getAllData]. */
+    fun getAllData(): PersistentMap<String, String>
+
 /* ------------------------------------------ Updating ------------------------------------------ */
 
     /**
@@ -114,6 +123,20 @@ interface LibrarySource {
          */
         fun removeTagType(tagTypeName: String): UpdateBuilder
 
+        /**
+         * See [SongLibrary.putData].
+         * @param [key] will never be an empty string
+         * @return this [UpdateBuilder] for easy function chaining
+         */
+        fun putData(key: String, value: String): UpdateBuilder
+
+        /**
+         * See [SongLibrary.removeData].
+         * @param [key] will never be an empty string
+         * @return this [UpdateBuilder] for easy function chaining
+         */
+        fun removeData(key: String): UpdateBuilder
+
         /** Applies the changes made from this [UpdateBuilder] onto the [LibrarySource]. */
         fun commit()
     }
@@ -130,4 +153,6 @@ interface LibrarySource {
     data class RemoveTagUpdate(val tagName: String) : Update()
     data class PutTagTypeUpdate(val tagTypeName: String, val tagType: TagType) : Update()
     data class RemoveTagTypeUpdate(val tagTypeName: String) : Update()
+    data class PutDataUpdate(val key: String, val value: String) : Update()
+    data class RemoveDataUpdate(val key: String) : Update()
 }

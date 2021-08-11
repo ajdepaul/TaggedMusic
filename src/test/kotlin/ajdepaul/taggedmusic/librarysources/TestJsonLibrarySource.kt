@@ -42,4 +42,12 @@ class TestJsonLibrarySource {
         // test changes were saved
         TestLibrarySourceUtil.assertUpdated(JsonLibrarySource(jsonFilePath), songLibraryData)
     }
+
+    /** Tests [JsonLibrarySource.getSongsByTags]. */
+    @Test
+    fun testGetSongsByTags() {
+        val jsonFilePath = tempDir.newFile().toPath()
+        // use util class for tests
+        TestLibrarySourceUtil.testGetSongsByTags(JsonLibrarySource(jsonFilePath, TagType(0)))
+    }
 }

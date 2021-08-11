@@ -109,7 +109,7 @@ class TestSftpLibrarySource {
                 createServerSession() ?: return,
                 listOf(Paths.get("library.json")),
                 sftpDir,
-                remoteTempDir.resolve(Paths.get("test1", "test")),
+                remoteTempDir.resolve(Paths.get("testConstructor", "test")),
                 JsonLibrarySource(jsonLibraryFilePath, TagType(0)),
                 true
             ).close()
@@ -122,7 +122,7 @@ class TestSftpLibrarySource {
                     createServerSession() ?: return,
                     listOf(Paths.get("library.json")),
                     sftpDir,
-                    remoteTempDir.resolve(Paths.get("test1", "test")),
+                    remoteTempDir.resolve(Paths.get("testConstructor", "test")),
                     JsonLibrarySource(jsonLibraryFilePath)
                 )
             ) {
@@ -155,7 +155,7 @@ class TestSftpLibrarySource {
                     createServerSession() ?: return,
                     listOf(Paths.get("library.json")),
                     sftpDir,
-                    remoteTempDir.resolve(Paths.get("test2")),
+                    remoteTempDir.resolve(Paths.get("testUpdater")),
                     JsonLibrarySource(jsonLibraryFilePath, TagType(0)),
                     true
                 )
@@ -169,11 +169,45 @@ class TestSftpLibrarySource {
                     createServerSession() ?: return,
                     listOf(Paths.get("library.json")),
                     sftpDir,
-                    remoteTempDir.resolve(Paths.get("test2")),
+                    remoteTempDir.resolve(Paths.get("testUpdater")),
                     JsonLibrarySource(jsonLibraryFilePath)
                 )
             ) {
                 TestLibrarySourceUtil.assertUpdated(this, songLibraryData)
+            }
+
+        } finally {
+            cleanServer()
+        }
+    }
+
+    /** Tests [SftpLibrarySource.getSongsByTags]. */
+    @Test
+    fun testGetSongsByTags() {
+        if (createServerSession() == null) {
+            println(
+                "[WARNING] SFTP library source test skipped. To run this test see " +
+                        "`${testServerProperties}`."
+            )
+            return
+        }
+
+        try {
+            val sftpDir = tempDir.newFolder("sftpDir").toPath()
+            val jsonLibraryFilePath = tempDir.newFile("sftpDir/library.json").toPath()
+
+            // use util class for tests
+            with(
+                SftpLibrarySource(
+                    createServerSession() ?: return,
+                    listOf(Paths.get("library.json")),
+                    sftpDir,
+                    remoteTempDir.resolve(Paths.get("testGetSongsByTags")),
+                    JsonLibrarySource(jsonLibraryFilePath, TagType(0)),
+                    true
+                )
+            ) {
+                TestLibrarySourceUtil.testGetSongsByTags(this)
             }
 
         } finally {

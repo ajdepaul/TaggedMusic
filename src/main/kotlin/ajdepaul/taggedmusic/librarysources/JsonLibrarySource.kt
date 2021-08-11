@@ -42,7 +42,7 @@ class JsonLibrarySource(
     constructor(jsonFilePath: Path, defaultTagType: TagType) : this(jsonFilePath) {
         writeJson(
             jsonFilePath,
-            SongLibraryData(SongLibrary.VERSION, defaultTagType, mapOf(), mapOf(), mapOf())
+            SongLibraryData(SongLibrary.VERSION, defaultTagType, mapOf(), mapOf(), mapOf(), mapOf())
         )
     }
 
@@ -102,6 +102,18 @@ class JsonLibrarySource(
         return readJson(jsonFilePath).tagTypes.toPersistentHashMap()
     }
 
+    override fun hasData(key: String): Boolean {
+        return key in readJson(jsonFilePath).data
+    }
+
+    override fun getData(key: String): String? {
+        return readJson(jsonFilePath).data[key]
+    }
+
+    override fun getAllData(): PersistentMap<String, String> {
+        return readJson(jsonFilePath).data.toPersistentHashMap()
+    }
+
 /* ------------------------------------------ Updating ------------------------------------------ */
 
     override fun updater(): LibrarySource.UpdateBuilder {
@@ -151,11 +163,22 @@ class JsonLibrarySource(
             return this
         }
 
+        override fun putData(key: String, value: String): LibrarySource.UpdateBuilder {
+            updateQueue.add(LibrarySource.PutDataUpdate(key, value))
+            return this
+        }
+
+        override fun removeData(key: String): LibrarySource.UpdateBuilder {
+            updateQueue.add(LibrarySource.RemoveDataUpdate(key))
+            return this
+        }
+
         override fun commit() {
             val songLibraryData = readJson(jsonFilePath)
             var songs = songLibraryData.songs.toPersistentHashMap()
             var tags = songLibraryData.tags.toPersistentHashMap()
             var tagTypes = songLibraryData.tagTypes.toPersistentHashMap()
+            var data = songLibraryData.data.toPersistentHashMap()
 
             // apply each update
             while (updateQueue.isNotEmpty()) {
@@ -203,12 +226,21 @@ class JsonLibrarySource(
                         }
                     }
 
+                    is LibrarySource.PutDataUpdate -> {
+                        data += update.key to update.value
+                    }
+
+                    is LibrarySource.RemoveDataUpdate -> {
+                        data -= update.key
+                    }
+
                     else -> error("Unexpected LibrarySource.Up}date type.")
                 }
             }
             songLibraryData.songs = songs
             songLibraryData.tags = tags
             songLibraryData.tagTypes = tagTypes
+            songLibraryData.data = data
 
             writeJson(jsonLibrarySource.jsonFilePath, songLibraryData)
         }
@@ -244,8 +276,8 @@ class JsonLibrarySource(
         /** Converts [song] into [SongData]. */
         fun songToJsonData(song: Song): SongData {
             return SongData(
-                song.title, song.duration, song.artist, song.album, song.trackNum, song.year,
-                song.dateCreated.toString(), song.lastModified.toString(), song.playCount, song.tags
+                song.title, song.duration, song.trackNum, song.year, song.dateCreated.toString(),
+                song.lastModified.toString(), song.playCount, song.tags
             )
         }
 
@@ -258,20 +290,21 @@ class JsonLibrarySource(
             var defaultTagType: TagType,
             var songs: Map<String, SongData>,
             var tags: Map<String, Tag>,
-            var tagTypes: Map<String, TagType>
+            var tagTypes: Map<String, TagType>,
+            var data: Map<String, String>
         )
 
         /** [Song] data stored in a format for reading/writing JSON strings. */
         data class SongData(
-            val title: String, val duration: Int, val artist: String?, val album: String?,
-            val trackNum: Int?, val year: Int?, val dateCreated: String, val lastModified: String,
-            val playCount: Int, val tags: Set<String>
+            val title: String, val duration: Int, val trackNum: Int?, val year: Int?,
+            val dateCreated: String, val lastModified: String, val playCount: Int,
+            val tags: Set<String>
         ) {
 
             /** Converts this [SongData] into a [Song]. */
             fun toSong(): Song {
                 return Song(
-                    this.title, this.duration, this.artist, this.album, this.trackNum, this.year,
+                    this.title, this.duration, this.trackNum, this.year,
                     LocalDateTime.parse(this.dateCreated), LocalDateTime.parse(this.lastModified),
                     this.playCount, this.tags.toPersistentHashSet()
                 )

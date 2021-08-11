@@ -5,7 +5,10 @@
 package ajdepaul.taggedmusic.extensions
 
 import ajdepaul.taggedmusic.Song
-import kotlinx.collections.immutable.*
+import kotlinx.collections.immutable.PersistentMap
+import kotlinx.collections.immutable.PersistentSet
+import kotlinx.collections.immutable.mutate
+import kotlinx.collections.immutable.persistentHashSetOf
 
 /*
  * To use these extensions, be sure to import `ajdepaul.taggedmusic.extensions.*`.
@@ -19,9 +22,9 @@ import kotlinx.collections.immutable.*
 fun <K, V> PersistentMap<K, V>.removeAll(predicate: (Map.Entry<K, V>) -> Boolean):
         PersistentMap<K, V> {
     return this.mutate { mutableMap ->
-        mutableMap.entries.forEach { entry ->
-            if (predicate(entry)) mutableMap.remove(entry.key)
-        }
+        val toRemove = mutableListOf<K>()
+        for (entry in mutableMap) if (predicate(entry)) toRemove.add(entry.key)
+        for (key in toRemove) mutableMap.remove(key)
     }
 }
 
@@ -34,9 +37,9 @@ fun <K, V> PersistentMap<K, V>.removeAll(predicate: (Map.Entry<K, V>) -> Boolean
 fun <K, V> PersistentMap<K, V>.keepOnly(predicate: (Map.Entry<K, V>) -> Boolean):
         PersistentMap<K, V> {
     return this.mutate { mutableMap ->
-        mutableMap.entries.forEach { entry ->
-            if (!predicate(entry)) mutableMap.remove(entry.key)
-        }
+        val toRemove = mutableListOf<K>()
+        for (entry in mutableMap) if (!predicate(entry)) toRemove.add(entry.key)
+        for (key in toRemove) mutableMap.remove(key)
     }
 }
 

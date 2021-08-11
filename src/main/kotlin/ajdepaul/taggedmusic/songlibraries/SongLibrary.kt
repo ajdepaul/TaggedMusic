@@ -18,6 +18,10 @@ import kotlinx.collections.immutable.*
  * 2. Tags | key: the [Tag] name, value: the [Tag] data object
  * 3. Tag Types | key: the [TagType] name, value: the [TagType] data object
  *
+ * There is an additional data map that stores [String] values using [String] keys that doesn't
+ * affect the functionality of the [SongLibrary]. It can be used to conveniently store any
+ * additional information relevant to your application into the [LibrarySource].
+ *
  * You can read or write to these maps using the various put, remove, and get functions.
  * @param librarySource [LibrarySource] used to retrieve data about a user's [SongLibrary]
  */
@@ -254,6 +258,72 @@ abstract class SongLibrary(
      */
     protected abstract fun _getTagType(tagTypeName: String): TagType?
 
-    /** Retrieves a map of all the [TagType]s in the [CachedSongLibrary]. */
+    /** Retrieves a map of all the [TagType]s in the [SongLibrary]. */
     abstract fun getAllTagTypes(): PersistentMap<String, TagType>
+
+/* -------------------------------------------- Data -------------------------------------------- */
+
+    /**
+     * Adds [value] to the data map.
+     * @param key if blank, no change is made
+     */
+    fun putData(key: String, value: String) {
+        if (key.isBlank()) return
+        _putData(key, value)
+    }
+
+    /**
+     * Implementation for [putData].
+     * @param key will never be blank
+     */
+    protected abstract fun _putData(key: String, value: String)
+
+    /**
+     * Removes an entry from the data map using [key].
+     * @param key if blank, no change is made
+     */
+    fun removeData(key: String) {
+        if (key.isBlank()) return
+        _removeTagType(key)
+    }
+
+    /**
+     * Implementation for [removeData].
+     * @param key will never be blank
+     */
+    protected abstract fun _removeData(key: String)
+
+    /**
+     * Checks if [key] is a key used in the data map.
+     * @param key if blank, returns false
+     */
+    fun hasData(key: String): Boolean {
+        if (key.isBlank()) return false
+        return _hasData(key)
+    }
+
+    /**
+     * Implementation for [hasData].
+     * @param key will never be blank
+     */
+    abstract fun _hasData(key: String): Boolean
+
+    /**
+     * Retrieves the [String] from the data map that corresponds to [key].
+     * @param key if blank, returns null
+     * @return null if the key does not exist
+     */
+    fun getData(key: String): String? {
+        if (key.isBlank()) return null
+        return _getData(key)
+    }
+
+    /**
+     * Implementation for [getData].
+     * @param key will never be blank
+     */
+    abstract fun _getData(key: String): String?
+
+    /** Retrieves a map of all the data [String]s in the [SongLibrary]. */
+    abstract fun getAllData(): PersistentMap<String, String>
 }

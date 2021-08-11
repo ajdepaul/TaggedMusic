@@ -12,8 +12,6 @@ import java.time.LocalDateTime
 data class Song constructor(
     val title: String,
     val duration: Int,
-    val artist: String? = null,
-    val album: String? = null,
     val trackNum: Int? = null,
     val year: Int? = null,
     val dateCreated: LocalDateTime = LocalDateTime.now(),
@@ -30,8 +28,6 @@ data class Song constructor(
     data class SongBuilder internal constructor(private val song: Song) {
         var title: String = song.title
         var duration: Int = song.duration
-        var artist: String? = song.artist
-        var album: String? = song.album
         var trackNum: Int? = song.trackNum
         var year: Int? = song.year
         var playCount: Int = song.playCount
@@ -41,8 +37,6 @@ data class Song constructor(
             return Song(
                 title,
                 duration,
-                artist,
-                album,
                 trackNum,
                 year,
                 song.dateCreated,

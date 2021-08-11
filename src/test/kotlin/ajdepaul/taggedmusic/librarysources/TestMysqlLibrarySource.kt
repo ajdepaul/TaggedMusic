@@ -51,9 +51,9 @@ class TestMysqlLibrarySource {
     private fun cleanServer() {
         val dataSource = createServerSession() ?: return
 
-        with (dataSource.connection) {
+        with(dataSource.connection) {
             with(this.createStatement()) {
-                this.execute("DROP DATABASE $tempDatabase;")
+                this.execute("DROP DATABASE IF EXISTS $tempDatabase;")
             }
         }
     }
@@ -74,7 +74,7 @@ class TestMysqlLibrarySource {
             MysqlLibrarySource(createServerSession() ?: return, TagType(0)).close()
 
             // test new library source using that server
-            with (MysqlLibrarySource(createServerSession() ?: return)) {
+            with(MysqlLibrarySource(createServerSession() ?: return)) {
                 TestLibrarySourceUtil.assertDefaults(this)
             }
 
@@ -96,13 +96,36 @@ class TestMysqlLibrarySource {
 
         try {
             // test making changes
-            val songLibraryData = with (MysqlLibrarySource(createServerSession() ?: return)) {
+            val songLibraryData = with(MysqlLibrarySource(createServerSession() ?: return)) {
                 TestLibrarySourceUtil.assertUpdates(this)
             }
 
             // test changes were saved
-            with (MysqlLibrarySource(createServerSession() ?: return)) {
+            with(MysqlLibrarySource(createServerSession() ?: return)) {
                 TestLibrarySourceUtil.assertUpdated(this, songLibraryData)
+            }
+
+        } finally {
+            cleanServer()
+        }
+    }
+
+    /** Tests [SftpLibrarySource.getSongsByTags]. */
+    @Test
+    fun testGetSongsByTags() {
+        if (createServerSession() == null) {
+            println(
+                "[WARNING] MySQL library source test skipped. To run this test see " +
+                        "`${testServerProperties}`."
+            )
+            return
+        }
+
+        try {
+
+            // use util class for tests
+            with(MysqlLibrarySource(createServerSession() ?: return)) {
+                TestLibrarySourceUtil.testGetSongsByTags(this)
             }
 
         } finally {
