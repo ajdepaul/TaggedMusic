@@ -146,7 +146,7 @@ abstract class SongLibrary(
     /**
      * Removes a [Tag] from the [Tag] map using the key [tagName]. Any [Song]s in the [Song] map
      * that have [tagName] will have [tagName] removed. [Song]s with the [Tag] removed, do not have
-     * their [Song.lastModified] time updated.
+     * their [Song.modifyDate] time updated.
      * @param tagName if blank, no change is made
      */
     fun removeTag(tagName: String) {

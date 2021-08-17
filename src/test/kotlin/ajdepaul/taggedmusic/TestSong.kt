@@ -28,7 +28,7 @@ class TestSong {
         assertEquals("title", song.title)
         assertEquals(1000, song.duration)
         assertEquals(null, song.trackNum)
-        assertEquals(null, song.year)
+        assertEquals(null, song.releaseDate)
         assertEquals(0, song.playCount)
         assertEquals(persistentHashSetOf(), song.tags)
     }
@@ -37,81 +37,87 @@ class TestSong {
     @Test
     fun testMutate() {
         var song = Song("title", 1000)
-        val dateCreated = song.dateCreated
-        var before = song.lastModified
+        val createDate = song.createDate
+        var before = song.modifyDate
         val delay = 1L
 
         // individual mutates
         Thread.sleep(delay)
         song = song.mutate { title = "title2" }
-        before = assertUpdated(before, song.lastModified)
+        before = assertUpdated(before, song.modifyDate)
         assertEquals("title2", song.title)
 
         Thread.sleep(delay)
         song = song.mutate { duration = 2000 }
-        before = assertUpdated(before, song.lastModified)
+        before = assertUpdated(before, song.modifyDate)
         assertEquals(2000, song.duration)
 
         Thread.sleep(delay)
         song = song.mutate { trackNum = 1 }
-        before = assertUpdated(before, song.lastModified)
+        before = assertUpdated(before, song.modifyDate)
         assertEquals(1, song.trackNum)
 
         Thread.sleep(delay)
-        song = song.mutate { year = 2020 }
-        before = assertUpdated(before, song.lastModified)
-        assertEquals(2020, song.year)
+        song = song.mutate { releaseDate = LocalDateTime.of(2020, 1, 1, 0, 0) }
+        before = assertUpdated(before, song.modifyDate)
+        assertEquals(LocalDateTime.of(2020, 1, 1, 0, 0), song.releaseDate)
 
         Thread.sleep(delay)
         song = song.mutate { playCount++ }
-        before = assertUpdated(before, song.lastModified)
+        before = assertUpdated(before, song.modifyDate)
         assertEquals(1, song.playCount)
 
         Thread.sleep(delay)
         song = song.mutate { tags = persistentHashSetOf("A", "B", "C") }
-        before = assertUpdated(before, song.lastModified)
+        before = assertUpdated(before, song.modifyDate)
         assertEquals(persistentHashSetOf("A", "B", "C"), song.tags)
 
         // multiple mutates
         Thread.sleep(delay)
-        song = song.mutate { duration = 3000; year = 2010; }
-        before = assertUpdated(before, song.lastModified)
+        song = song.mutate { duration = 3000; releaseDate = LocalDateTime.of(2010, 1, 1, 0, 0); }
+        before = assertUpdated(before, song.modifyDate)
         assertEquals(3000, song.duration)
-        assertEquals(2010, song.year)
+        assertEquals(LocalDateTime.of(2010, 1, 1, 0, 0), song.releaseDate)
 
         Thread.sleep(delay)
         song = song.mutate { title = "title3"; tags = persistentHashSetOf("A", "C", "D") }
-        before = assertUpdated(before, song.lastModified)
+        before = assertUpdated(before, song.modifyDate)
         assertEquals("title3", song.title)
         assertEquals(persistentHashSetOf("A", "C", "D"), song.tags)
 
         Thread.sleep(delay)
-        song = song.mutate { playCount++; year = 2000; trackNum = 2 }
-        before = assertUpdated(before, song.lastModified)
+        song = song.mutate {
+            playCount++; releaseDate = LocalDateTime.of(2000, 1, 1, 0, 0); trackNum = 2
+        }
+        before = assertUpdated(before, song.modifyDate)
         assertEquals(2, song.playCount)
-        assertEquals(2000, song.year)
+        assertEquals(LocalDateTime.of(2000, 1, 1, 0, 0), song.releaseDate)
         assertEquals(2, song.trackNum)
 
         // don't update last modified
         Thread.sleep(delay)
-        song = song.mutate(false) { duration = 4000; year = 1990; }
-        assertEquals(before, song.lastModified)
+        song = song.mutate(false) {
+            duration = 4000; releaseDate = LocalDateTime.of(1990, 1, 1, 0, 0)
+        }
+        assertEquals(before, song.modifyDate)
         assertEquals(4000, song.duration)
-        assertEquals(1990, song.year)
+        assertEquals(LocalDateTime.of(1990, 1, 1, 0, 0), song.releaseDate)
 
         Thread.sleep(delay)
         song = song.mutate(false) { title = "title4"; tags = persistentHashSetOf("B", "D", "E") }
-        assertEquals(before, song.lastModified)
+        assertEquals(before, song.modifyDate)
         assertEquals("title4", song.title)
         assertEquals(persistentHashSetOf("B", "D", "E"), song.tags)
 
         Thread.sleep(delay)
-        song = song.mutate(false) { playCount++; year = 1980; trackNum = 3 }
-        assertEquals(before, song.lastModified)
+        song = song.mutate(false) {
+            playCount++; releaseDate = LocalDateTime.of(1980, 1, 1, 0, 0); trackNum = 3
+        }
+        assertEquals(before, song.modifyDate)
         assertEquals(3, song.playCount)
-        assertEquals(1980, song.year)
+        assertEquals(LocalDateTime.of(1980, 1, 1, 0, 0), song.releaseDate)
         assertEquals(3, song.trackNum)
 
-        assertEquals(dateCreated, song.dateCreated)
+        assertEquals(createDate, song.createDate)
     }
 }

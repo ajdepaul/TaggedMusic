@@ -7,15 +7,13 @@ package ajdepaul.taggedmusic.librarysources
 import ajdepaul.taggedmusic.Song
 import ajdepaul.taggedmusic.Tag
 import ajdepaul.taggedmusic.TagType
-import ajdepaul.taggedmusic.songlibraries.SongLibrary
+import ajdepaul.taggedmusic.extensions.filterByTags
 import com.mysql.jdbc.jdbc2.optional.MysqlDataSource
 import kotlinx.collections.immutable.*
 import java.io.Closeable
-import java.nio.file.Paths
 import java.sql.Connection
-import java.sql.Statement
-import java.time.LocalDateTime
-import java.time.ZoneId
+import java.sql.Timestamp
+import java.sql.Types
 import java.util.*
 
 /**
@@ -23,55 +21,16 @@ import java.util.*
  * [dataSource] on instantiation.
  * @throws java.sql.SQLException if there is an issue connecting to or updating the MySQL server
  */
-class MysqlLibrarySource : LibrarySource, Closeable {
-
+class MysqlLibrarySource(
     /** [MysqlDataSource] for opening a connection to the MySQL server. */
     private val dataSource: MysqlDataSource
+) : LibrarySource, Closeable {
 
     /** The current open connection to the MySQL server. null if the connection is closed. */
-    private var connection: Connection
+    private var connection: Connection = dataSource.connection
 
-    constructor(dataSource: MysqlDataSource) {
-        this.dataSource = dataSource
-        this.connection = dataSource.connection
-    }
-
-    /**
-     * Creates an empty [MysqlLibrarySource] and initializes the MySQL server with the required
-     * database.
-     * @param defaultTagType the initial default tag type for the [SongLibrary]
-     */
-    constructor(dataSource: MysqlDataSource, defaultTagType: TagType) {
-        this.dataSource = dataSource
-
-        // create database
-        val databaseName = dataSource.databaseName
-        dataSource.databaseName = ""
-
-        with(dataSource.connection) {
-            with(this.createStatement()) {
-                this.execute("CREATE DATABASE $databaseName;")
-            }
-        }
-
-        // initialize database
-        dataSource.databaseName = databaseName
-        this.connection = dataSource.connection
-
-        val libraryInitScript = this.javaClass.getResource(
-            Paths.get("MysqlLibrarySource", "library_init.sql").toString()
-        )!!
-            .readText()
-            .replace("<<version>>", SongLibrary.VERSION)
-            .replace("<<default_tag_type_color>>", defaultTagType.color.toString())
-
-        with(connection.createStatement()) {
-            for (command in libraryInitScript.split(";").filterNot { it.isBlank() }) {
-                this.addBatch("$command;")
-            }
-            this.executeBatch()
-        }
-    }
+    /** All the callable procedures on the MySQL server. */
+    private val callableStatements: CallableStatements = CallableStatements(connection)
 
     /** Closes the connection to the currently connected MySQL server. */
     override fun close() {
@@ -81,228 +40,179 @@ class MysqlLibrarySource : LibrarySource, Closeable {
 /* ----------------------------------------- Retrieving ----------------------------------------- */
 
     override fun getVersion(): String {
-        return with(connection.createStatement()) {
-            with(this.executeQuery("SELECT * FROM library;")) {
-                this.first()
-                this.getString("version")
-            }
+        return with(callableStatements.libraryGetVersion.executeQuery()) {
+            this.first()
+            this.getString(1)
         }
     }
 
     override fun getDefaultTagType(): TagType {
-        return with(connection.createStatement()) {
-            with(this.executeQuery("SELECT * FROM tag_types WHERE name = '';")) {
-                this.first()
-                TagType(this.getInt("color"))
-            }
+        return with(callableStatements.tagTypesGetDefault.executeQuery()) {
+            this.first()
+            TagType(this.getInt("color"))
         }
     }
 
     override fun hasSong(fileName: String): Boolean {
-        return with(connection.createStatement()) {
-            with(
-                this.executeQuery("SELECT COUNT(file_name) FROM songs WHERE file_name = '$fileName';")
-            ) {
-                this.first()
-                this.getInt(1) == 1
-            }
+        callableStatements.songsSelect.setString("file_name", fileName)
+        return with(callableStatements.songsSelect.executeQuery()) {
+            this.next()
         }
     }
 
     override fun getSong(fileName: String): Song? {
-        return with(connection.createStatement()) {
-            with(this.executeQuery("SELECT * FROM songs WHERE file_name = '$fileName';")) {
-
-                if (!this.first()) null
-                else {
-                    Song(
-                        this.getString("title"),
-                        this.getInt("duration"),
-                        this.getInt("track_num"),
-                        this.getInt("year"),
-                        this.getDate("date_created").toInstant().atZone(ZoneId.systemDefault())
-                            .toLocalDateTime(),
-                        this.getDate("last_modified").toInstant().atZone(ZoneId.systemDefault())
-                            .toLocalDateTime(),
-                        this.getInt("playCount")
-                    )
-                }
+        callableStatements.songsSelect.setString("file_name", fileName)
+        return with(callableStatements.songsSelect.executeQuery()) {
+            if (!this.first()) null
+            else {
+                Song(
+                    this.getString("title"),
+                    this.getInt("duration"),
+                    this.getInt("track_num"),
+                    this.getTimestamp("release_date").toLocalDateTime(),
+                    this.getTimestamp("create_date").toLocalDateTime(),
+                    this.getTimestamp("modify_date").toLocalDateTime(),
+                    this.getInt("playCount")
+                )
             }
         }
     }
 
     override fun getAllSongs(): PersistentMap<String, Song> {
-        return with(connection.createStatement()) {
-            with(this.executeQuery("SELECT * FROM songs;")) {
-                val result = persistentHashMapOf<String, Song>().builder()
+        // load all the songs
+        var songs = with(callableStatements.songsSelectAll.executeQuery()) {
+            val result = persistentHashMapOf<String, Song>().builder()
 
-                while (this.next()) {
-                    result[this.getString("file_name")] = Song(
-                        this.getString("title"),
-                        this.getInt("duration"),
-                        this.getInt("track_num"),
-                        this.getInt("year"),
-                        this.getDate("date_created").toInstant().atZone(ZoneId.systemDefault())
-                            .toLocalDateTime(),
-                        this.getDate("last_modified").toInstant().atZone(ZoneId.systemDefault())
-                            .toLocalDateTime(),
-                        this.getInt("playCount")
-                    )
-                }
+            while (this.next()) {
+                result[this.getString("file_name")] = Song(
+                    this.getString("title"),
+                    this.getInt("duration"),
+                    this.getInt("track_num"),
+                    this.getTimestamp("release_date").toLocalDateTime(),
+                    this.getTimestamp("create_date").toLocalDateTime(),
+                    this.getTimestamp("modify_date").toLocalDateTime(),
+                    this.getInt("playCount")
+                )
+            }
 
-                result.build()
+            result.build()
+        }
+
+        // load the song tags
+        with(callableStatements.songHasTagSelectAll.executeQuery()) {
+            while (this.next()) {
+                val fileName = this.getString("song_file")
+                songs += fileName to songs[fileName]!!.mutate { tags += this@with.getString("tag") }
             }
         }
+
+        return songs
     }
 
     override fun getSongsByTags(
         includeTags: PersistentSet<String>,
         excludeTags: PersistentSet<String>
     ): PersistentMap<String, Song> {
-        return with(connection.createStatement()) {
-            with(this.executeQuery("")) {
-                val result = persistentHashMapOf<String, Song>().builder()
-
-                TODO()
-
-                result.build()
-            }
-        }
+        return getAllSongs().filterByTags(includeTags, excludeTags)
     }
 
     override fun hasTag(tagName: String): Boolean {
-        return with(connection.createStatement()) {
-            with(
-                this.executeQuery("SELECT COUNT(name) FROM tags WHERE name = '$tagName';")
-            ) {
-                this.first()
-                this.getInt(1) == 1
-            }
+        callableStatements.tagsSelect.setString("name", tagName)
+        return with(callableStatements.tagsSelect.executeQuery()) {
+            this.next()
         }
     }
 
     override fun getTag(tagName: String): Tag? {
-        return with(connection.createStatement()) {
-            with(this.executeQuery("SELECT * FROM tags WHERE name = '$tagName';")) {
-
-                if (!this.first()) null
-                else Tag(this.getString("type"), this.getString("description"))
-            }
+        callableStatements.tagsSelect.setString("name", tagName)
+        return with(callableStatements.tagsSelect.executeQuery()) {
+            this.next()
+            if (!this.first()) null
+            else Tag(this.getString("type"), this.getString("description"))
         }
     }
 
     override fun getAllTags(): PersistentMap<String, Tag> {
-        return with(connection.createStatement()) {
-            with(this.executeQuery("SELECT * FROM songs;")) {
-                val result = persistentHashMapOf<String, Tag>().builder()
+        return with(callableStatements.tagsSelectAll.executeQuery()) {
+            val result = persistentHashMapOf<String, Tag>().builder()
 
-                while (this.next()) {
-                    result[this.getString("name")] =
-                        Tag(this.getString("type"), this.getString("description"))
-                }
-
-                result.build()
+            while (this.next()) {
+                result[this.getString("name")] =
+                    Tag(this.getString("type"), this.getString("description"))
             }
+
+            result.build()
         }
     }
 
     override fun hasTagType(tagTypeName: String): Boolean {
-        return with(connection.createStatement()) {
-            with(
-                this.executeQuery("SELECT COUNT(name) FROM tag_types WHERE name = '$tagTypeName';")
-            ) {
-                this.first()
-                this.getInt(1) == 1
-            }
+        callableStatements.tagTypesSelect.setString("name", tagTypeName)
+        return with(callableStatements.tagTypesSelect.executeQuery()) {
+            this.next()
         }
     }
 
     override fun getTagType(tagTypeName: String): TagType? {
-        return with(connection.createStatement()) {
-            with(this.executeQuery("SELECT * FROM tag_types WHERE name = '$tagTypeName';")) {
-
-                if (!this.first()) null
-                else TagType(this.getInt("color"))
-            }
+        callableStatements.tagTypesSelect.setString("name", tagTypeName)
+        return with(callableStatements.tagTypesSelect.executeQuery()) {
+            this.next()
+            if (!this.first()) null
+            else TagType(this.getInt("color"))
         }
     }
 
     override fun getAllTagTypes(): PersistentMap<String, TagType> {
-        return with(connection.createStatement()) {
-            with(this.executeQuery("SELECT * FROM tag_types;")) {
-                val result = persistentHashMapOf<String, TagType>().builder()
+        return with(callableStatements.tagsSelectAll.executeQuery()) {
+            val result = persistentHashMapOf<String, TagType>().builder()
 
-                while (this.next()) {
-                    result[this.getString("name")] = TagType(this.getInt("color"))
-                }
-
-                result.build()
+            while (this.next()) {
+                result[this.getString("name")] = TagType(this.getInt("color"))
             }
+
+            result.build()
         }
     }
 
     override fun hasData(key: String): Boolean {
-        return with(connection.createStatement()) {
-            with(
-                this.executeQuery("SELECT COUNT(k) FROM data WHERE name = '$key';")
-            ) {
-                this.first()
-                this.getInt(1) == 1
-            }
+        callableStatements.dataSelect.setString("k", key)
+        return with(callableStatements.dataSelect.executeQuery()) {
+            this.next()
         }
     }
 
     override fun getData(key: String): String? {
-        return with(connection.createStatement()) {
-            with(this.executeQuery("SELECT * FROM data WHERE k = '$key';")) {
-
-                if (!this.first()) null
-                else this.getString("v")
-            }
+        callableStatements.dataSelect.setString("k", key)
+        return with(callableStatements.dataSelect.executeQuery()) {
+            if (!this.next()) null
+            else this.getString("v")
         }
     }
 
     override fun getAllData(): PersistentMap<String, String> {
-        return with(connection.createStatement()) {
-            with(this.executeQuery("SELECT * FROM data;")) {
-                val result = persistentHashMapOf<String, String>().builder()
+        return with(callableStatements.dataSelectAll.executeQuery()) {
+            val result = persistentHashMapOf<String, String>().builder()
 
-                while (this.next()) {
-                    result[this.getString("k")] = this.getString("v")
-                }
-
-                result.build()
+            while (this.next()) {
+                result[this.getString("k")] = this.getString("v")
             }
+
+            result.build()
         }
     }
 
 /* ------------------------------------------ Updating ------------------------------------------ */
 
     override fun updater(): LibrarySource.UpdateBuilder {
-        return UpdateBuilder(
-            connection,
-            getAllSongs(),
-            getAllTags(),
-            getAllTagTypes(),
-            getAllData()
-        )
+        return UpdateBuilder(connection, callableStatements)
     }
 
     /** See [LibrarySource.UpdateBuilder]. */
     private class UpdateBuilder(
-        val connection: Connection,
-        var songs: PersistentMap<String, Song>,
-        var tags: PersistentMap<String, Tag>,
-        var tagTypes: PersistentMap<String, TagType>,
-        var data: PersistentMap<String, String>
+        private val connection: Connection,
+        private val callableStatements: CallableStatements
     ) : LibrarySource.UpdateBuilder {
 
         private val updateQueue: Queue<LibrarySource.Update> = LinkedList()
-
-        /** Formats this [LocalDateTime] to the SQL DATETIME format. */
-        private fun LocalDateTime.formatDate(): String {
-            return this.toString().replace('T', ' ').dropLast(4)
-        }
 
         override fun setDefaultTagType(tagType: TagType): LibrarySource.UpdateBuilder {
             updateQueue.add(LibrarySource.SetDefaultTagTypeUpdate(tagType))
@@ -359,124 +269,180 @@ class MysqlLibrarySource : LibrarySource, Closeable {
                 while (updateQueue.isNotEmpty()) {
                     when (val update = updateQueue.remove()) {
 
-                        is LibrarySource.SetDefaultTagTypeUpdate ->
-                            this.addBatch(
-                                "UPDATE tag_types " +
-                                        "SET color = ${update.tagType.color} " +
-                                        "WHERE name = '';"
-                            )
+                        is LibrarySource.SetDefaultTagTypeUpdate -> {
+                            val cs = callableStatements.tagTypesPut
+                            cs.setString("name", "")
+                            cs.setInt("arg_color", update.tagType.color)
+                            cs.executeQuery()
+                        }
 
-                        is LibrarySource.PutSongUpdate ->
-                            putSong(this, update.fileName, update.song)
+                        is LibrarySource.PutSongUpdate -> {
+                            // put song
+                            val songCs = callableStatements.songsPut
 
-                        is LibrarySource.RemoveSongUpdate ->
-                            songs -= update.fileName
+                            songCs.setString("arg_file_name", update.fileName)
+                            songCs.setString("arg_title", update.song.title)
+                            songCs.setInt("arg_duration", update.song.duration)
+
+                            if (update.song.trackNum != null)
+                                songCs.setInt("arg_track_num", update.song.trackNum)
+                            else
+                                songCs.setNull("arg_track_num", Types.INTEGER)
+
+                            if (update.song.releaseDate != null)
+                                songCs.setTimestamp("arg_release_date", Timestamp.valueOf(update.song.releaseDate))
+                            else
+                                songCs.setNull("arg_release_date", Types.TIMESTAMP)
+
+                            songCs.setTimestamp("arg_create_date", Timestamp.valueOf(update.song.createDate))
+                            songCs.setTimestamp("arg_modify_date", Timestamp.valueOf(update.song.modifyDate))
+                            songCs.setInt("arg_play_count", update.song.playCount)
+
+                            songCs.executeQuery()
+
+                            // remove stored song tags
+                            val removeTagsCs = callableStatements.songHasTagRemoveAllForSong
+                            removeTagsCs.setString("song_file", update.fileName)
+                            removeTagsCs.executeQuery()
+
+                            // store new song tags
+                            val putTagsCs = callableStatements.songHasTagPut
+                            for (tag in update.song.tags) {
+                                putTagsCs.setString("arg_song_file", update.fileName)
+                                putTagsCs.setString("arg_tag", tag)
+                                putTagsCs.addBatch()
+                            }
+                            putTagsCs.executeBatch()
+                        }
+
+                        is LibrarySource.RemoveSongUpdate -> {
+                            val cs = callableStatements.songsRemove
+                            cs.setString("file_name", update.fileName)
+                            cs.executeQuery()
+                        }
 
                         is LibrarySource.PutTagUpdate -> {
-                            tags += update.tagName to update.tag
-                            // add the tag type to the tag type map if it's new
-                            if (update.tag.type != null) {
-                                tagTypes += update.tag.type to songLibraryData.defaultTagType
-                            }
+                            val cs = callableStatements.tagsPut
+                            cs.setString("arg_name", update.tagName)
+                            cs.setString("arg_type", update.tag.type)
+                            cs.setString("arg_description", update.tag.description)
+                            cs.executeQuery()
                         }
 
                         is LibrarySource.RemoveTagUpdate -> {
-                            tags -= update.tagName
-                            // remove the tag from every song
-                            for (entry in songs) {
-                                songs += entry.key to JsonLibrarySource.songToJsonData(
-                                    entry.value.toSong()
-                                        .mutate(false) { this.tags -= update.tagName })
-                            }
+                            val cs = callableStatements.tagsRemove
+                            cs.setString("name", update.tagName)
+                            cs.executeQuery()
                         }
 
-                        is LibrarySource.PutTagTypeUpdate ->
-                            tagTypes += update.tagTypeName to update.tagType
+                        is LibrarySource.PutTagTypeUpdate -> {
+                            val cs = callableStatements.tagTypesPut
+                            cs.setString("name", update.tagTypeName)
+                            cs.setInt("arg_color", update.tagType.color)
+                            cs.executeQuery()
+                        }
 
                         is LibrarySource.RemoveTagTypeUpdate -> {
-                            tagTypes -= update.tagTypeName
-                            // for every tag that uses this tag type, set its type to null
-                            for (entry in tags) {
-                                if (entry.value.type == update.tagTypeName) {
-                                    tags += entry.key to entry.value.mutate { type = null }
-                                }
-                            }
+                            val cs = callableStatements.tagTypesRemove
+                            cs.setString("name", update.tagTypeName)
+                            cs.executeQuery()
                         }
 
                         is LibrarySource.PutDataUpdate -> {
-                            data += update.key to update.value
+                            val cs = callableStatements.dataPut
+                            cs.setString("arg_k", update.key)
+                            cs.setString("arg_v", update.value)
+                            cs.executeQuery()
                         }
 
                         is LibrarySource.RemoveDataUpdate -> {
-                            data -= update.key
+                            val cs = callableStatements.dataRemove
+                            cs.setString("k", update.key)
+                            cs.executeQuery()
                         }
 
-                        else -> error("Unexpected LibrarySource.Up}date type.")
+                        else -> error("Unexpected LibrarySource.Update type.")
                     }
                 }
-
-                // execute each command in the batch
-                this.executeBatch()
             }
         }
+    }
 
-/* ----------------------------------------- SQL Helpers ---------------------------------------- */
+/* ---------------------------------- MySQL Callable Statements --------------------------------- */
 
-        // TODO move SQL commands to functions/procedures
+    /** Utility class for [CallableStatements] to execute procedures on the MySQL server. */
+    private class CallableStatements(val connection: Connection) {
 
-        private fun putSong(statement: Statement, fileName: String, song: Song) {
-            // update song
-            if (songs.containsKey(fileName)) {
-                statement.addBatch(
-                    """
-                        Update
-                          songs
-                        SET
-                          title = '${song.title}'
-                          duration = ${song.duration}
-                          track_num = ${song.trackNum}
-                          year = ${song.year}
-                          date_created = ${song.dateCreated.formatDate()}
-                          last_modified = ${song.lastModified.formatDate()}
-                          play_count = ${song.playCount}
-                        WHERE
-                          file_name = '${fileName}';
-                    """.trimIndent()
-                )
-            }
-            // insert song
-            else {
-                statement.addBatch(
-                    """
-                        INSERT INTO
-                          songs(
-                            file_name,
-                            title,
-                            duration,
-                            track_num,
-                            year,
-                            date_created,
-                            last_modified,
-                            play_count
-                          )
-                        VALUES(
-                          '${fileName}',
-                          '${song.title}',
-                          ${song.duration},
-                          ${song.trackNum},
-                          ${song.year},
-                          '${song.dateCreated.formatDate()}',
-                          '${song.lastModified.formatDate()}',
-                          ${song.playCount}
-                        )
-                    """.trimIndent()
-                )
-            }
+        /* ----- Retrieving Procedures -----*/
 
+        /** Result: the version of the library. */
+        val libraryGetVersion = connection.prepareCall("{call Library_get_version()}")
 
-//                            // add any new tags to the tag map
-//                            tags += update.song.tags.associateWith { Tag(null) }
-        }
+        /** Result: the default tag type. */
+        val tagTypesGetDefault = connection.prepareCall("{call TagTypes_get_default()}")
 
+        /** Result: the `file_name` song. */
+        val songsSelect = connection.prepareCall("{call Songs_select(?)}")
+
+        /** Result: all the songs. */
+        val songsSelectAll = connection.prepareCall("{call Songs_select_all()}")
+
+        /** Result: the `name` tag. */
+        val tagsSelect = connection.prepareCall("{call Tags_select(?)}")
+
+        /** Result: all the tags. */
+        val tagsSelectAll = connection.prepareCall("{call Tags_select_call()}")
+
+        /** Result: the `name` tag type. */
+        val tagTypesSelect = connection.prepareCall("{call TagTypes_select(?)}")
+
+        /** Result: all the tag types. */
+        val tagTypesSelectAll = connection.prepareCall("{call TagTypes_select_all()}")
+
+        /** Result: all the tags that `file_name` song has. */
+        val songHasTagSelectSongTags =
+            connection.prepareCall("{call SongHasTag_select_song_tags(?)}")
+
+        /** Result: all song has tags relationships. */
+        val songHasTagSelectAll = connection.prepareCall("{call SongHasTag_select_all()}")
+
+        /** Result: the `k` data entry. */
+        val dataSelect = connection.prepareCall("{call Data_select(?)}")
+
+        /** Result: all the data entries. */
+        val dataSelectAll = connection.prepareCall("{call Data_select_all()}")
+
+        /* ----- Updating Procedures -----*/
+
+        /** Inserts/updates a song. */
+        val songsPut = connection.prepareCall("{call Songs_put(?, ?, ?, ?, ?, ?, ?, ?)}")
+
+        /** Removes a song. */
+        val songsRemove = connection.prepareCall("{call Songs_remove(?)}")
+
+        /** Inserts/updates a tag. */
+        val tagsPut = connection.prepareCall("{call Tags_put(?, ?, ?)}")
+
+        /** Removes a tag. */
+        val tagsRemove = connection.prepareCall("{call Tags_remove(?)}")
+
+        /** Inserts/updates a tag type.  */
+        val tagTypesPut = connection.prepareCall("{call TagTypes_put(?, ?)}")
+
+        /** Removes a tag type. */
+        val tagTypesRemove = connection.prepareCall("{call TagTypes_remove(?)}")
+
+        /** Inserts a new song has tag relationship. */
+        val songHasTagPut = connection.prepareCall("{call SongHasTag_put(?, ?)}")
+
+        /** Removes all song has tag relationships for a song. */
+        val songHasTagRemoveAllForSong =
+            connection.prepareCall("{call SongHasTag_remove_all_for_song(?)}")
+
+        /** Inserts/updates a data entry. */
+        val dataPut = connection.prepareCall("{call Data_put(?, ?)}")
+
+        /** Removes a data entry. */
+        val dataRemove = connection.prepareCall("{call Data_remove(?)}")
     }
 }

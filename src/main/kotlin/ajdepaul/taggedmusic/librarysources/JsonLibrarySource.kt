@@ -234,7 +234,7 @@ class JsonLibrarySource(
                         data -= update.key
                     }
 
-                    else -> error("Unexpected LibrarySource.Up}date type.")
+                    else -> error("Unexpected LibrarySource.Update type.")
                 }
             }
             songLibraryData.songs = songs
@@ -276,8 +276,8 @@ class JsonLibrarySource(
         /** Converts [song] into [SongData]. */
         fun songToJsonData(song: Song): SongData {
             return SongData(
-                song.title, song.duration, song.trackNum, song.year, song.dateCreated.toString(),
-                song.lastModified.toString(), song.playCount, song.tags
+                song.title, song.duration, song.trackNum, song.releaseDate.toString(),
+                song.createDate.toString(), song.modifyDate.toString(), song.playCount, song.tags
             )
         }
 
@@ -296,16 +296,16 @@ class JsonLibrarySource(
 
         /** [Song] data stored in a format for reading/writing JSON strings. */
         data class SongData(
-            val title: String, val duration: Int, val trackNum: Int?, val year: Int?,
-            val dateCreated: String, val lastModified: String, val playCount: Int,
-            val tags: Set<String>
+            val title: String, val duration: Int, val trackNum: Int?,
+            val releaseDate: String?, val createDate: String, val modifyDate: String,
+            val playCount: Int, val tags: Set<String>
         ) {
 
             /** Converts this [SongData] into a [Song]. */
             fun toSong(): Song {
                 return Song(
-                    this.title, this.duration, this.trackNum, this.year,
-                    LocalDateTime.parse(this.dateCreated), LocalDateTime.parse(this.lastModified),
+                    this.title, this.duration, this.trackNum, LocalDateTime.parse(this.releaseDate),
+                    LocalDateTime.parse(this.createDate), LocalDateTime.parse(this.modifyDate),
                     this.playCount, this.tags.toPersistentHashSet()
                 )
             }
