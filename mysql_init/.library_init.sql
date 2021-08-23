@@ -1,17 +1,10 @@
 /*
- * Script for initializing a MySQL server with a database that can be used as a MysqlLibrarySource.
- * The database name can be set on lines 4 and 5, and the default tag type initial values can be set
- * on line 12.
+ * Copyright © 2021 Anthony DePaul
+ * Licensed under the MIT License https://ajdepaul.mit-license.org/
  */
+CREATE DATABASE {database_name};
+USE {database_name};
 
--- Sets the name of the database on the MySQL server.
-CREATE DATABASE tagged_music;
-USE tagged_music;
-
--- Sets the initial default tag type properties.
-SET @default_tag_type_color := 0;
-
--- Do not modify.
 SET @version := '1.0';
 
 CREATE TABLE Library (
@@ -23,10 +16,10 @@ CREATE TABLE Songs (
     file_name VARCHAR(255) PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     duration INT NOT NULL,
-    track_num INT,
-    release_date DATETIME,
-    create_date DATETIME NOT NULL,
-    modify_date DATETIME NOT NULL,
+    track_num INT NULL,
+    release_date {supports-fractional-seconds},
+    create_date {supports-fractional-seconds} NOT NULL,
+    modify_date {supports-fractional-seconds} NOT NULL,
     play_count INT NOT NULL
 );
 
@@ -34,12 +27,12 @@ CREATE TABLE TagTypes (
     name VARCHAR(255) PRIMARY KEY,
     color INT NOT NULL
 );
-INSERT INTO TagTypes(name, color) VALUES ('', @default_tag_type_color);
+INSERT INTO TagTypes(name, color) VALUES ('', {default-tag-type-color});
 
 CREATE TABLE Tags (
     name VARCHAR(255) PRIMARY KEY,
     type VARCHAR(255),
-    description TEXT NOT NULL,
+    description TEXT,
     FOREIGN KEY(type) REFERENCES TagTypes(name) ON DELETE SET NULL
 );
 
@@ -71,8 +64,8 @@ CREATE PROCEDURE TagTypes_get_default() BEGIN
 END &&
 
 -- Result: the `file_name` song.
-CREATE PROCEDURE Songs_select(file_name VARCHAR(255)) BEGIN
-    SELECT * FROM Songs WHERE file_name = file_name;
+CREATE PROCEDURE Songs_select(arg_file_name VARCHAR(255)) BEGIN
+    SELECT * FROM Songs WHERE file_name = arg_file_name;
 END &&
 
 -- Result: all the songs.
@@ -81,8 +74,8 @@ CREATE PROCEDURE Songs_select_all() BEGIN
 END &&
 
 -- Result: the `name` tag.
-CREATE PROCEDURE Tags_select(name VARCHAR(255)) BEGIN
-    SELECT * FROM Tags WHERE name = name;
+CREATE PROCEDURE Tags_select(arg_name VARCHAR(255)) BEGIN
+    SELECT * FROM Tags WHERE name = arg_name;
 END &&
 
 -- Result: all the tags.
@@ -91,8 +84,8 @@ CREATE PROCEDURE Tags_select_all() BEGIN
 END &&
 
 -- Result: the `name` tag type.
-CREATE PROCEDURE TagTypes_select(name VARCHAR(255)) BEGIN
-    SELECT * FROM TagTypes WHERE name = name;
+CREATE PROCEDURE TagTypes_select(arg_name VARCHAR(255)) BEGIN
+    SELECT * FROM TagTypes WHERE name = arg_name;
 END &&
 
 -- Result: all the tag types.
@@ -101,8 +94,8 @@ CREATE PROCEDURE TagTypes_select_all() BEGIN
 END &&
 
 -- Result: all the tags that `file_name` song has.
-CREATE PROCEDURE SongHasTag_select_song_tags(song_file VARCHAR(255)) BEGIN
-    SELECT * FROM SongHasTag WHERE song_file = song_file;
+CREATE PROCEDURE SongHasTag_select_song_tags(arg_song_file VARCHAR(255)) BEGIN
+    SELECT * FROM SongHasTag WHERE song_file = arg_song_file;
 END &&
 
 -- Result: all song has tags relationships.
@@ -111,8 +104,8 @@ CREATE PROCEDURE SongHasTag_select_all() BEGIN
 END &&
 
 -- Result: the `k` data entry.
-CREATE PROCEDURE Data_select(k VARCHAR(255)) BEGIN
-    SELECT * FROM Data where k = k;
+CREATE PROCEDURE Data_select(arg_k VARCHAR(255)) BEGIN
+    SELECT * FROM Data where k = arg_k;
 END &&
 
 -- Result: all the data entries.
@@ -128,9 +121,9 @@ CREATE PROCEDURE Songs_put(
     arg_title VARCHAR(255),
     arg_duration INT,
     arg_track_num INT,
-    arg_release_date DATETIME,
-    arg_create_date DATETIME,
-    arg_modify_date DATETIME,
+    arg_release_date {supports-fractional-seconds},
+    arg_create_date {supports-fractional-seconds},
+    arg_modify_date {supports-fractional-seconds},
     arg_play_count INT
 ) BEGIN
     INSERT INTO
@@ -165,8 +158,8 @@ CREATE PROCEDURE Songs_put(
 END &&
 
 -- Removes a song.
-CREATE PROCEDURE Songs_remove(file_name VARCHAR(255)) BEGIN
-    DELETE FROM Songs WHERE file_name = file_name;
+CREATE PROCEDURE Songs_remove(arg_file_name VARCHAR(255)) BEGIN
+    DELETE FROM Songs WHERE file_name = arg_file_name;
 END &&
 
 -- Inserts/updates a tag.
@@ -177,20 +170,20 @@ CREATE PROCEDURE Tags_put(arg_name VARCHAR(255), arg_type VARCHAR(255), arg_desc
 END &&
 
 -- Removes a tag.
-CREATE PROCEDURE Tags_remove(name VARCHAR(255)) BEGIN
-    DELETE FROM Tags WHERE name = name;
+CREATE PROCEDURE Tags_remove(arg_name VARCHAR(255)) BEGIN
+    DELETE FROM Tags WHERE name = arg_name;
 END &&
 
 -- Inserts/updates a tag type.
-CREATE PROCEDURE TagTypes_put(name VARCHAR(255), arg_color INT) BEGIN
+CREATE PROCEDURE TagTypes_put(arg_name VARCHAR(255), arg_color INT) BEGIN
     INSERT INTO TagTypes(name, color)
-    VALUES (name, arg_color)
+    VALUES (arg_name, arg_color)
     ON DUPLICATE KEY UPDATE color = arg_color;
 END &&
 
 -- Removes a tag type.
-CREATE PROCEDURE TagTypes_remove(name VARCHAR(255)) BEGIN
-    DELETE FROM TagTypes WHERE name = name;
+CREATE PROCEDURE TagTypes_remove(arg_name VARCHAR(255)) BEGIN
+    DELETE FROM TagTypes WHERE name = arg_name;
 END &&
 
 -- Inserts a new song has tag relationship.
@@ -199,13 +192,13 @@ CREATE PROCEDURE SongHasTag_put(arg_song_file VARCHAR(255), arg_tag VARCHAR(255)
 END &&
 
 -- Removes a song has tag relationship.
-CREATE PROCEDURE SongHasTag_remove(song_file VARCHAR(255), tag VARCHAR(255)) BEGIN
-    DELETE FROM SongHasTag WHERE song_file = song_file AND tag = tag;
+CREATE PROCEDURE SongHasTag_remove(arg_song_file VARCHAR(255), arg_tag VARCHAR(255)) BEGIN
+    DELETE FROM SongHasTag WHERE song_file = arg_song_file AND tag = arg_tag;
 END &&
 
 -- Removes all song has tag relationships for a song.
-CREATE PROCEDURE SongHasTag_remove_all_for_song(song_file VARCHAR(255)) BEGIN
-    DELETE FROM SongHasTag WHERE song_file = song_file;
+CREATE PROCEDURE SongHasTag_remove_all_for_song(arg_song_file VARCHAR(255)) BEGIN
+    DELETE FROM SongHasTag WHERE song_file = arg_song_file;
 END &&
 
 -- Inserts/updates a data entry.
@@ -216,8 +209,8 @@ CREATE PROCEDURE Data_put(arg_k VARCHAR(255), arg_v VARCHAR(255)) BEGIN
 END &&
 
 -- Removes a data entry.
-CREATE PROCEDURE Data_remove(k VARCHAR(255)) BEGIN
-    DELETE FROM Data WHERE k = k;
+CREATE PROCEDURE Data_remove(arg_k VARCHAR(255)) BEGIN
+    DELETE FROM Data WHERE k = arg_k;
 END &&
 
 DELIMITER ;

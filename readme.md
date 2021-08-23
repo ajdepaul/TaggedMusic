@@ -7,6 +7,12 @@ kotlinx-collections-immutable discussed
 also this https://github.com/Kotlin/kotlinx.collections.immutable/blob/master/core/commonMain/src/implementations/immutableMap/PersistentHashMap.kt
 this too import kotlinx.collections.immutable.*
 
+## TODO my sql section
+
+Script for initializing a MySQL server with a database that can be used as a MysqlLibrarySource. The
+database name can be set on lines 4 and 5, and the default tag type initial values can be set on
+line 12.
+
 # Tagged Music
 
 Applying folksonomy to music libraries. This library provides a large amount of control over a
