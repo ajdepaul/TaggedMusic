@@ -43,12 +43,14 @@ fun main() {
     // write to file
     File(outputFile).writeText(resultScript)
 
-    println("""
+    println(
+        """
         Generated SQL script `$outputFile` with the options:
             database-name=$databaseName
             supports-fractional-seconds=$suppFracSec
             default-tag-type-color=$defaultTagTypeColor
-    """.trimIndent())
+    """.trimIndent()
+    )
 }
 
 fun printUsage() {
