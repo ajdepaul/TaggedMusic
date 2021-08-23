@@ -23,9 +23,9 @@ class TestLibrarySourceUtil {
          * Asserts that [librarySource] has the correct version, default tag type, songs map, tags
          * map, and tag types map.
          */
-        fun assertDefaults(librarySource: LibrarySource) {
+        fun assertDefaults(librarySource: LibrarySource, defaultTagType: TagType = TagType(0)) {
             assertEquals(SongLibrary.VERSION, librarySource.getVersion())
-            assertEquals(TagType(0), librarySource.getDefaultTagType())
+            assertEquals(defaultTagType, librarySource.getDefaultTagType())
 
             assertFalse(librarySource.hasSong("song1.mp3"))
             assertNull(librarySource.getSong("song1.mp3"))

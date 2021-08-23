@@ -22,14 +22,11 @@ class TestMysqlLibrarySource {
         Paths.get("TestMysqlLibrarySource", "server.properties").toString()
     )
 
-    /** Name the tests should use for the temporary testing database. */
-    private val tempDatabase = "test_tagged_music"
-
     /**
      * Get the test server information from the server.properties resource.
      * @return null if the test should be skipped
      */
-    private fun createServerSession(): MysqlDataSource? {
+    private fun loadProperties(): PropertiesData? {
         val prop = Properties()
         prop.load(testServerProperties!!.openStream())
 
@@ -42,18 +39,37 @@ class TestMysqlLibrarySource {
         dataSource.port = prop.getProperty("port")?.toInt() ?: 3306
         dataSource.user = prop.getProperty("username")
         dataSource.setPassword(prop.getProperty("password"))
-        dataSource.databaseName = tempDatabase
+        dataSource.databaseName = prop.getProperty("databaseName") ?: "tagged_music"
 
-        return dataSource
+        val suppFracSec = prop.getProperty("supportsFractionalSeconds") == "true"
+
+        val defaultTagType = TagType(prop.getProperty("defaultTagTypeColor")?.toInt() ?: 0)
+
+        return PropertiesData(dataSource, suppFracSec, defaultTagType)
     }
 
     /** Drops the [tempDatabase] database from the MySQL server. */
     private fun cleanServer() {
-        val dataSource = createServerSession() ?: return
+        val (dataSource, suppFracSec, defaultTagType) = loadProperties() ?: return
+
+        val prop = Properties()
+        prop.load(testServerProperties!!.openStream())
 
         with(dataSource.connection) {
             with(this.createStatement()) {
-                this.execute("DROP DATABASE IF EXISTS $tempDatabase;")
+                this.addBatch("DELETE FROM Songs;")
+                this.addBatch("DELETE FROM Tags;")
+                this.addBatch("DELETE FROM TagTypes;")
+                this.addBatch("DELETE FROM SongHasTag;")
+                this.addBatch("DELETE FROM Data;")
+                this.addBatch(
+                    """
+                    INSERT INTO TagTypes(name, color)
+                    VALUES ('', ${defaultTagType.color})
+                    ON DUPLICATE KEY UPDATE color = ${defaultTagType.color};
+                """.trimIndent()
+                )
+                this.executeBatch()
             }
         }
     }
@@ -61,7 +77,9 @@ class TestMysqlLibrarySource {
     /** Tests the [MysqlDataSource] constructors. */
     @Test
     fun testConstructor() {
-        if (createServerSession() == null) {
+        val propertiesData = loadProperties()
+
+        if (propertiesData == null) {
             println(
                 "[WARNING] MySQL library source test skipped. To run this test see " +
                         "`${testServerProperties}`."
@@ -69,13 +87,11 @@ class TestMysqlLibrarySource {
             return
         }
 
-        try {
-            // initialize the server with default values
-            MysqlLibrarySource(createServerSession() ?: return, TagType(0)).close()
+        val (dataSource, suppFracSec, defaultTagType) = propertiesData
 
-            // test new library source using that server
-            with(MysqlLibrarySource(createServerSession() ?: return)) {
-                TestLibrarySourceUtil.assertDefaults(this)
+        try {
+            with(MysqlLibrarySource(dataSource, suppFracSec)) {
+                TestLibrarySourceUtil.assertDefaults(this, defaultTagType)
             }
 
         } finally {
@@ -86,7 +102,9 @@ class TestMysqlLibrarySource {
     /** Tests [MysqlDataSource.updater]. */
     @Test
     fun testUpdater() {
-        if (createServerSession() == null) {
+        val propertiesData = loadProperties()
+
+        if (propertiesData == null) {
             println(
                 "[WARNING] MySQL library source test skipped. To run this test see " +
                         "`${testServerProperties}`."
@@ -94,14 +112,16 @@ class TestMysqlLibrarySource {
             return
         }
 
+        val (dataSource, suppFracSec, _) = propertiesData
+
         try {
             // test making changes
-            val songLibraryData = with(MysqlLibrarySource(createServerSession() ?: return)) {
+            val songLibraryData = with(MysqlLibrarySource(dataSource, suppFracSec)) {
                 TestLibrarySourceUtil.assertUpdates(this)
             }
 
             // test changes were saved
-            with(MysqlLibrarySource(createServerSession() ?: return)) {
+            with(MysqlLibrarySource(dataSource, suppFracSec)) {
                 TestLibrarySourceUtil.assertUpdated(this, songLibraryData)
             }
 
@@ -113,7 +133,9 @@ class TestMysqlLibrarySource {
     /** Tests [SftpLibrarySource.getSongsByTags]. */
     @Test
     fun testGetSongsByTags() {
-        if (createServerSession() == null) {
+        val propertiesData = loadProperties()
+
+        if (propertiesData == null) {
             println(
                 "[WARNING] MySQL library source test skipped. To run this test see " +
                         "`${testServerProperties}`."
@@ -121,10 +143,11 @@ class TestMysqlLibrarySource {
             return
         }
 
-        try {
+        val (dataSource, suppFracSec, _) = propertiesData
 
+        try {
             // use util class for tests
-            with(MysqlLibrarySource(createServerSession() ?: return)) {
+            with(MysqlLibrarySource(dataSource, suppFracSec)) {
                 TestLibrarySourceUtil.testGetSongsByTags(this)
             }
 
@@ -132,4 +155,11 @@ class TestMysqlLibrarySource {
             cleanServer()
         }
     }
+
+    /** Contains data loaded from the server.properties resource file. */
+    data class PropertiesData(
+        val dataSource: MysqlDataSource,
+        val suppFracSec: Boolean,
+        val defaultTagType: TagType
+    )
 }
