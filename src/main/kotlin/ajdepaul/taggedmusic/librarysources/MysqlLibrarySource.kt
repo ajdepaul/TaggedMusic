@@ -86,7 +86,7 @@ class MysqlLibrarySource(
         } ?: return null
 
         // load load song tags
-        song = song.mutate {
+        song = song.mutate(false) {
             callableStatements.songHasTagSelectSongTags.setString("arg_song_file", fileName)
             with(callableStatements.songHasTagSelectSongTags.executeQuery()) {
                 while (this.next()) {
@@ -104,10 +104,12 @@ class MysqlLibrarySource(
             val result = persistentHashMapOf<String, Song>().builder()
 
             while (this.next()) {
+                var trackNum: Int? = this.getInt("track_num")
+                if (this.wasNull()) trackNum = null
                 result[this.getString("file_name")] = Song(
                     this.getString("title"),
                     this.getInt("duration"),
-                    this.getInt("track_num"),
+                    trackNum,
                     this.getLocalDateTime("release_date"),
                     this.getLocalDateTime("create_date")!!,
                     this.getLocalDateTime("modify_date")!!,
@@ -122,7 +124,8 @@ class MysqlLibrarySource(
         with(callableStatements.songHasTagSelectAll.executeQuery()) {
             while (this.next()) {
                 val fileName = this.getString("song_file")
-                songs += fileName to songs[fileName]!!.mutate { tags += this@with.getString("tag") }
+                songs += fileName to songs[fileName]!!
+                    .mutate(false) { tags += this@with.getString("tag") }
             }
         }
 
@@ -182,7 +185,7 @@ class MysqlLibrarySource(
     }
 
     override fun getAllTagTypes(): PersistentMap<String, TagType> {
-        return with(callableStatements.tagsSelectAll.executeQuery()) {
+        return with(callableStatements.tagTypesSelectAll.executeQuery()) {
             val result = persistentHashMapOf<String, TagType>().builder()
 
             while (this.next()) {
@@ -357,6 +360,7 @@ class MysqlLibrarySource(
                             for (tag in update.song.tags.filterNot { it in allTags.keys }) {
                                 putTagCs.setString("arg_name", tag)
                                 putTagCs.setNull("arg_type", Types.VARCHAR)
+                                putTagCs.setNull("arg_description", Types.VARCHAR)
                                 putTagCs.addBatch()
                             }
                             putTagCs.executeBatch()

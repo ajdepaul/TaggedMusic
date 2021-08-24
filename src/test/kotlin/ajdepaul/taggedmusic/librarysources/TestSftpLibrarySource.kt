@@ -31,7 +31,7 @@ class TestSftpLibrarySource {
      * Get the test server information from the server.properties resource.
      * @return null if the test should be skipped
      */
-    private fun createServerSession(): Session? {
+    private fun loadProperties(): Session? {
         val prop = Properties()
         prop.load(testServerProperties!!.openStream())
 
@@ -55,7 +55,7 @@ class TestSftpLibrarySource {
 
     /** Removes the temporary files created in the SFTP server. */
     private fun cleanServer() {
-        val session = createServerSession() ?: return
+        val session = loadProperties() ?: return
 
         try {
             session.connect()
@@ -92,7 +92,7 @@ class TestSftpLibrarySource {
     /** Tests the [SftpLibrarySource] constructors. */
     @Test
     fun testConstructor() {
-        if (createServerSession() == null) {
+        if (loadProperties() == null) {
             println(
                 "[WARNING] SFTP library source test skipped. To run this test see " +
                         "`${testServerProperties}`."
@@ -106,7 +106,7 @@ class TestSftpLibrarySource {
 
             // initialize the server with default values
             SftpLibrarySource(
-                createServerSession() ?: return,
+                loadProperties() ?: return,
                 listOf(Paths.get("library.json")),
                 sftpDir,
                 remoteTempDir.resolve(Paths.get("testConstructor", "test")),
@@ -119,7 +119,7 @@ class TestSftpLibrarySource {
             // test new library source using that server
             with(
                 SftpLibrarySource(
-                    createServerSession() ?: return,
+                    loadProperties() ?: return,
                     listOf(Paths.get("library.json")),
                     sftpDir,
                     remoteTempDir.resolve(Paths.get("testConstructor", "test")),
@@ -137,7 +137,7 @@ class TestSftpLibrarySource {
     /** Tests [SftpLibrarySource.updater]. */
     @Test
     fun testUpdater() {
-        if (createServerSession() == null) {
+        if (loadProperties() == null) {
             println(
                 "[WARNING] SFTP library source test skipped. To run this test see " +
                         "`${testServerProperties}`."
@@ -152,7 +152,7 @@ class TestSftpLibrarySource {
             // test making changes
             val songLibraryData = with(
                 SftpLibrarySource(
-                    createServerSession() ?: return,
+                    loadProperties() ?: return,
                     listOf(Paths.get("library.json")),
                     sftpDir,
                     remoteTempDir.resolve(Paths.get("testUpdater")),
@@ -166,7 +166,7 @@ class TestSftpLibrarySource {
             // test changes were saved
             with(
                 SftpLibrarySource(
-                    createServerSession() ?: return,
+                    loadProperties() ?: return,
                     listOf(Paths.get("library.json")),
                     sftpDir,
                     remoteTempDir.resolve(Paths.get("testUpdater")),
@@ -184,7 +184,7 @@ class TestSftpLibrarySource {
     /** Tests [SftpLibrarySource.getSongsByTags]. */
     @Test
     fun testGetSongsByTags() {
-        if (createServerSession() == null) {
+        if (loadProperties() == null) {
             println(
                 "[WARNING] SFTP library source test skipped. To run this test see " +
                         "`${testServerProperties}`."
@@ -199,7 +199,7 @@ class TestSftpLibrarySource {
             // use util class for tests
             with(
                 SftpLibrarySource(
-                    createServerSession() ?: return,
+                    loadProperties() ?: return,
                     listOf(Paths.get("library.json")),
                     sftpDir,
                     remoteTempDir.resolve(Paths.get("testGetSongsByTags")),

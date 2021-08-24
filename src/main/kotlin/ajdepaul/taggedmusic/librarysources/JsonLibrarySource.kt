@@ -276,7 +276,7 @@ class JsonLibrarySource(
         /** Converts [song] into [SongData]. */
         fun songToJsonData(song: Song): SongData {
             return SongData(
-                song.title, song.duration, song.trackNum, song.releaseDate.toString(),
+                song.title, song.duration, song.trackNum, song.releaseDate?.toString(),
                 song.createDate.toString(), song.modifyDate.toString(), song.playCount, song.tags
             )
         }
@@ -304,9 +304,14 @@ class JsonLibrarySource(
             /** Converts this [SongData] into a [Song]. */
             fun toSong(): Song {
                 return Song(
-                    this.title, this.duration, this.trackNum, LocalDateTime.parse(this.releaseDate),
-                    LocalDateTime.parse(this.createDate), LocalDateTime.parse(this.modifyDate),
-                    this.playCount, this.tags.toPersistentHashSet()
+                    this.title,
+                    this.duration,
+                    this.trackNum,
+                    if (this.releaseDate != null) LocalDateTime.parse(this.releaseDate) else null,
+                    LocalDateTime.parse(this.createDate),
+                    LocalDateTime.parse(this.modifyDate),
+                    this.playCount,
+                    this.tags.toPersistentHashSet()
                 )
             }
         }

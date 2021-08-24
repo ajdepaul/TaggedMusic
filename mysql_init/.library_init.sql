@@ -90,7 +90,7 @@ END &&
 
 -- Result: all the tag types.
 CREATE PROCEDURE TagTypes_select_all() BEGIN
-    SELECT * FROM TagTypes;
+    SELECT * FROM TagTypes WHERE name <> '';
 END &&
 
 -- Result: all the tags that `file_name` song has.
