@@ -24,12 +24,14 @@ class CachelessSongLibrary(librarySource: LibrarySource) : SongLibrary(librarySo
     /** Used to keep track of changes to make to [librarySource]. */
     private val librarySourceUpdater = librarySource.updater()
 
-    override var defaultTagType: TagType
-        get() = librarySource.getDefaultTagType()
-        set(value) {
-            librarySourceUpdater.setDefaultTagType(value)
-            librarySourceUpdater.commit()
-        }
+    override fun setDefaultTagType(tagType: TagType) {
+        librarySourceUpdater.setDefaultTagType(tagType)
+        librarySourceUpdater.commit()
+    }
+
+    override fun getDefaultTagType(): TagType {
+        return librarySource.getDefaultTagType()
+    }
 
 /* -------------------------------------------- Songs ------------------------------------------- */
 
@@ -70,7 +72,7 @@ class CachelessSongLibrary(librarySource: LibrarySource) : SongLibrary(librarySo
     }
 
     override fun _removeTag(tagName: String) {
-        librarySourceUpdater.removeSong(tagName)
+        librarySourceUpdater.removeTag(tagName)
         librarySourceUpdater.commit()
     }
 

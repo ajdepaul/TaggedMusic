@@ -20,7 +20,7 @@ interface LibrarySource {
     /** Indicates the specification of the saved [SongLibrary]. */
     fun getVersion(): String
 
-    /** See [SongLibrary.defaultTagType]. */
+    /** See [SongLibrary.getDefaultTagType]. */
     fun getDefaultTagType(): TagType
 
     /** See [SongLibrary.hasSong]. */
@@ -78,7 +78,7 @@ interface LibrarySource {
      */
     interface UpdateBuilder {
 
-        /** See [SongLibrary.defaultTagType]. */
+        /** See [SongLibrary.setDefaultTagType]. */
         fun setDefaultTagType(tagType: TagType): UpdateBuilder
 
         /**

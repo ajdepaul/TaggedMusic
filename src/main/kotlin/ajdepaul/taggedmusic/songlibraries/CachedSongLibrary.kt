@@ -32,17 +32,14 @@ class CachedSongLibrary(librarySource: LibrarySource) : SongLibrary(librarySourc
     /** Used to keep track of changes to make to [librarySource]. */
     private val librarySourceUpdater = librarySource.updater()
 
-    override var defaultTagType: TagType = librarySource.getDefaultTagType()
-        set(value) {
-            librarySourceUpdater.setDefaultTagType(value)
-            field = value
-        }
-
     /** [PersistentMap] of all the [Song]s in this [SongLibrary]. */
     private var songs: PersistentMap<String, Song> = librarySource.getAllSongs()
 
     /** [PersistentMap] of all the [Tag]s in this [SongLibrary]. */
     private var tags: PersistentMap<String, Tag> = librarySource.getAllTags()
+
+    /** The default [TagType] to use when a [Tag] has no [TagType]. */
+    private var defaultTagType: TagType = librarySource.getDefaultTagType()
 
     /** [PersistentMap] of all the [TagType]s in this [SongLibrary]. */
     private var tagTypes: PersistentMap<String, TagType> = librarySource.getAllTagTypes()
@@ -57,6 +54,15 @@ class CachedSongLibrary(librarySource: LibrarySource) : SongLibrary(librarySourc
      */
     fun commit() {
         librarySourceUpdater.commit()
+    }
+
+    override fun getDefaultTagType(): TagType {
+        return defaultTagType
+    }
+
+    override fun setDefaultTagType(tagType: TagType) {
+        librarySourceUpdater.setDefaultTagType(tagType)
+        defaultTagType = tagType
     }
 
 /* -------------------------------------------- Songs ------------------------------------------- */

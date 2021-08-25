@@ -35,9 +35,6 @@ abstract class SongLibrary(
         val VERSION = "1.0"
     }
 
-    /** The [TagType] to use when a [Tag] has no [TagType]. */
-    abstract var defaultTagType: TagType
-
     init {
         // check the version of librarySource
         val libSrcVer = librarySource.getVersion()
@@ -47,6 +44,12 @@ abstract class SongLibrary(
                         "version ($VERSION). Unexpected behavior is likely to occur."
             )
     }
+
+    /** Sets the [TagType] to use when a [Tag] has no [TagType]. */
+    abstract fun setDefaultTagType(tagType: TagType)
+
+    /** Retrieves the [TagType] to use when a [Tag] has no [TagType]. */
+    abstract fun getDefaultTagType(): TagType
 
 /* -------------------------------------------- Songs ------------------------------------------- */
 
@@ -284,7 +287,7 @@ abstract class SongLibrary(
      */
     fun removeData(key: String) {
         if (key.isBlank()) return
-        _removeTagType(key)
+        _removeData(key)
     }
 
     /**

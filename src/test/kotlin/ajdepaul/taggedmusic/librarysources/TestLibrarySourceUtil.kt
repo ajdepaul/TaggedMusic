@@ -9,7 +9,6 @@ import ajdepaul.taggedmusic.Tag
 import ajdepaul.taggedmusic.TagType
 import ajdepaul.taggedmusic.songlibraries.SongLibrary
 import kotlinx.collections.immutable.*
-import java.time.LocalDateTime
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
@@ -30,19 +29,19 @@ class TestLibrarySourceUtil {
 
             assertFalse(librarySource.hasSong("song1.mp3"))
             assertNull(librarySource.getSong("song1.mp3"))
-            assertEquals(persistentHashMapOf(), librarySource.getAllSongs())
+            assertEquals(mapOf<String, Song>(), librarySource.getAllSongs())
 
             assertFalse(librarySource.hasTag("tag1"))
             assertNull(librarySource.getTag("tag1"))
-            assertEquals(persistentHashMapOf(), librarySource.getAllTags())
+            assertEquals(mapOf<String, Tag>(), librarySource.getAllTags())
 
             assertFalse(librarySource.hasTagType("type1"))
             assertNull(librarySource.getTagType("type1"))
-            assertEquals(persistentHashMapOf(), librarySource.getAllTagTypes())
+            assertEquals(mapOf<String, TagType>(), librarySource.getAllTagTypes())
 
             assertFalse(librarySource.hasData("key"))
             assertNull(librarySource.getData("key"))
-            assertEquals(persistentHashMapOf(), librarySource.getAllData())
+            assertEquals(mapOf<String, String>(), librarySource.getAllData())
         }
 
         /**
