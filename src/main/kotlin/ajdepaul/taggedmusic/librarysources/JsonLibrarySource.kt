@@ -190,7 +190,7 @@ class JsonLibrarySource(
                     is LibrarySource.PutSongUpdate -> {
                         songs += (update.fileName to songToJsonData(update.song))
                         // add any new tags to the tag map
-                        tags += update.song.tags.associateWith { Tag(null) }
+                        tags += (update.song.tags - tags.keys).associateWith { Tag(null) }
                     }
 
                     is LibrarySource.RemoveSongUpdate ->
@@ -199,7 +199,7 @@ class JsonLibrarySource(
                     is LibrarySource.PutTagUpdate -> {
                         tags += update.tagName to update.tag
                         // add the tag type to the tag type map if it's new
-                        if (update.tag.type != null) {
+                        if (update.tag.type != null && update.tag.type !in tagTypes) {
                             tagTypes += update.tag.type to songLibraryData.defaultTagType
                         }
                     }

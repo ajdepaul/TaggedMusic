@@ -70,6 +70,8 @@ class CachedSongLibrary(librarySource: LibrarySource) : SongLibrary(librarySourc
     override fun _putSong(fileName: String, song: Song) {
         librarySourceUpdater.putSong(fileName, song)
         songs += fileName to song
+        // add any new tags to the tag map
+        tags += (song.tags - tags.keys).associateWith { Tag(null) }
     }
 
     override fun _removeSong(fileName: String) {
@@ -109,7 +111,7 @@ class CachedSongLibrary(librarySource: LibrarySource) : SongLibrary(librarySourc
     }
 
     override fun _removeTag(tagName: String) {
-        librarySourceUpdater.removeSong(tagName)
+        librarySourceUpdater.removeTag(tagName)
         tags -= tagName
         // remove the tag from every song
         for (entry in songs) {

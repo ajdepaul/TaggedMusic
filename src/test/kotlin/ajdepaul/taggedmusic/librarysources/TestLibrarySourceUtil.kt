@@ -8,7 +8,10 @@ import ajdepaul.taggedmusic.Song
 import ajdepaul.taggedmusic.Tag
 import ajdepaul.taggedmusic.TagType
 import ajdepaul.taggedmusic.songlibraries.SongLibrary
-import kotlinx.collections.immutable.*
+import kotlinx.collections.immutable.PersistentMap
+import kotlinx.collections.immutable.minus
+import kotlinx.collections.immutable.persistentHashSetOf
+import kotlinx.collections.immutable.persistentSetOf
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
@@ -124,6 +127,22 @@ class TestLibrarySourceUtil {
             assertTrue(librarySource.hasTag("tag1"))
             assertEquals(Tag(null), librarySource.getTag("tag1"))
 
+            // updating a song with additional tags should not affect the tag map if the tags
+            // already exist
+            librarySource.updater()
+                .putTag("tag1", Tag("type1", "description"))
+                .putSong("song1.mp3", Song("title1", 1000, tags = persistentHashSetOf("tag1")))
+                .commit()
+            assertEquals(Tag("type1", "description"), librarySource.getTag("tag1"))
+
+            // updating a tag with a new tag type should not affect the tag type map if the tag type
+            // already exists
+            librarySource.updater()
+                .putTagType("type1", TagType(50))
+                .putTag("tag1", Tag("type1", "description"))
+                .commit()
+            assertEquals(TagType(50), librarySource.getTagType("type1"))
+
             return SongLibraryData(
                 librarySource.getDefaultTagType(),
                 librarySource.getAllSongs(),
@@ -159,87 +178,276 @@ class TestLibrarySourceUtil {
                 .commit()
 
             // includes one tag
-            assertEquals(mapOf("song1.mp3" to song1, "song2.mp3" to song2, "song3.mp3" to song3), librarySource.getSongsByTags(persistentHashSetOf("A")))
-            assertEquals(mapOf("song1.mp3" to song1, "song2.mp3" to song2), librarySource.getSongsByTags(persistentHashSetOf("B")))
-            assertEquals(mapOf("song2.mp3" to song2, "song3.mp3" to song3), librarySource.getSongsByTags(persistentHashSetOf("C")))
-            assertEquals(mapOf("song1.mp3" to song1), librarySource.getSongsByTags(persistentHashSetOf("D")))
-            assertEquals(mapOf("song2.mp3" to song2), librarySource.getSongsByTags(persistentHashSetOf("E")))
-            assertEquals(mapOf("song3.mp3" to song3), librarySource.getSongsByTags(persistentHashSetOf("F")))
+            assertEquals(
+                mapOf("song1.mp3" to song1, "song2.mp3" to song2, "song3.mp3" to song3),
+                librarySource.getSongsByTags(persistentHashSetOf("A"))
+            )
+            assertEquals(
+                mapOf("song1.mp3" to song1, "song2.mp3" to song2),
+                librarySource.getSongsByTags(persistentHashSetOf("B"))
+            )
+            assertEquals(
+                mapOf("song2.mp3" to song2, "song3.mp3" to song3),
+                librarySource.getSongsByTags(persistentHashSetOf("C"))
+            )
+            assertEquals(
+                mapOf("song1.mp3" to song1),
+                librarySource.getSongsByTags(persistentHashSetOf("D"))
+            )
+            assertEquals(
+                mapOf("song2.mp3" to song2),
+                librarySource.getSongsByTags(persistentHashSetOf("E"))
+            )
+            assertEquals(
+                mapOf("song3.mp3" to song3),
+                librarySource.getSongsByTags(persistentHashSetOf("F"))
+            )
 
             // includes two tags
-            assertEquals(mapOf("song1.mp3" to song1, "song2.mp3" to song2), librarySource.getSongsByTags(persistentHashSetOf("A", "B")))
-            assertEquals(mapOf("song2.mp3" to song2, "song3.mp3" to song3), librarySource.getSongsByTags(persistentHashSetOf("A", "C")))
-            assertEquals(mapOf("song2.mp3" to song2), librarySource.getSongsByTags(persistentHashSetOf("B", "C")))
-            assertEquals(mapOf<String, Song>(), librarySource.getSongsByTags(persistentHashSetOf("B", "F")))
-            assertEquals(mapOf<String, Song>(), librarySource.getSongsByTags(persistentHashSetOf("C", "D")))
-            assertEquals(mapOf<String, Song>(), librarySource.getSongsByTags(persistentHashSetOf("D", "E")))
-            assertEquals(mapOf<String, Song>(), librarySource.getSongsByTags(persistentHashSetOf("D", "F")))
-            assertEquals(mapOf<String, Song>(), librarySource.getSongsByTags(persistentHashSetOf("E", "F")))
+            assertEquals(
+                mapOf("song1.mp3" to song1, "song2.mp3" to song2),
+                librarySource.getSongsByTags(persistentHashSetOf("A", "B"))
+            )
+            assertEquals(
+                mapOf("song2.mp3" to song2, "song3.mp3" to song3),
+                librarySource.getSongsByTags(persistentHashSetOf("A", "C"))
+            )
+            assertEquals(
+                mapOf("song2.mp3" to song2),
+                librarySource.getSongsByTags(persistentHashSetOf("B", "C"))
+            )
+            assertEquals(
+                mapOf<String, Song>(),
+                librarySource.getSongsByTags(persistentHashSetOf("B", "F"))
+            )
+            assertEquals(
+                mapOf<String, Song>(),
+                librarySource.getSongsByTags(persistentHashSetOf("C", "D"))
+            )
+            assertEquals(
+                mapOf<String, Song>(),
+                librarySource.getSongsByTags(persistentHashSetOf("D", "E"))
+            )
+            assertEquals(
+                mapOf<String, Song>(),
+                librarySource.getSongsByTags(persistentHashSetOf("D", "F"))
+            )
+            assertEquals(
+                mapOf<String, Song>(),
+                librarySource.getSongsByTags(persistentHashSetOf("E", "F"))
+            )
 
             // includes three tags
-            assertEquals(mapOf("song1.mp3" to song1), librarySource.getSongsByTags(persistentHashSetOf("A", "B", "D")))
-            assertEquals(mapOf("song3.mp3" to song3), librarySource.getSongsByTags(persistentHashSetOf("A", "C", "F")))
-            assertEquals(mapOf<String, Song>(), librarySource.getSongsByTags(persistentHashSetOf("A", "B", "F")))
-            assertEquals(mapOf<String, Song>(), librarySource.getSongsByTags(persistentHashSetOf("A", "C", "D")))
-            assertEquals(mapOf<String, Song>(), librarySource.getSongsByTags(persistentHashSetOf("D", "E", "F")))
+            assertEquals(
+                mapOf("song1.mp3" to song1),
+                librarySource.getSongsByTags(persistentHashSetOf("A", "B", "D"))
+            )
+            assertEquals(
+                mapOf("song3.mp3" to song3),
+                librarySource.getSongsByTags(persistentHashSetOf("A", "C", "F"))
+            )
+            assertEquals(
+                mapOf<String, Song>(),
+                librarySource.getSongsByTags(persistentHashSetOf("A", "B", "F"))
+            )
+            assertEquals(
+                mapOf<String, Song>(),
+                librarySource.getSongsByTags(persistentHashSetOf("A", "C", "D"))
+            )
+            assertEquals(
+                mapOf<String, Song>(),
+                librarySource.getSongsByTags(persistentHashSetOf("D", "E", "F"))
+            )
 
             // includes four tags
-            assertEquals(mapOf<String, Song>(), librarySource.getSongsByTags(persistentHashSetOf("A", "B", "C", "D")))
-            assertEquals(mapOf("song2.mp3" to song2), librarySource.getSongsByTags(persistentHashSetOf("A", "B", "C", "E")))
-            assertEquals(mapOf<String, Song>(), librarySource.getSongsByTags(persistentHashSetOf("A", "B", "C", "F")))
+            assertEquals(
+                mapOf<String, Song>(),
+                librarySource.getSongsByTags(persistentHashSetOf("A", "B", "C", "D"))
+            )
+            assertEquals(
+                mapOf("song2.mp3" to song2),
+                librarySource.getSongsByTags(persistentHashSetOf("A", "B", "C", "E"))
+            )
+            assertEquals(
+                mapOf<String, Song>(),
+                librarySource.getSongsByTags(persistentHashSetOf("A", "B", "C", "F"))
+            )
 
             // excludes one tag
-            assertEquals(mapOf<String, Song>(), librarySource.getSongsByTags(excludeTags = persistentHashSetOf("A")))
-            assertEquals(mapOf("song3.mp3" to song3), librarySource.getSongsByTags(excludeTags = persistentHashSetOf("B")))
-            assertEquals(mapOf("song1.mp3" to song1), librarySource.getSongsByTags(excludeTags = persistentHashSetOf("C")))
-            assertEquals(mapOf("song2.mp3" to song2, "song3.mp3" to song3), librarySource.getSongsByTags(excludeTags = persistentHashSetOf("D")))
-            assertEquals(mapOf("song1.mp3" to song1, "song3.mp3" to song3), librarySource.getSongsByTags(excludeTags = persistentHashSetOf("E")))
-            assertEquals(mapOf("song1.mp3" to song1, "song2.mp3" to song2), librarySource.getSongsByTags(excludeTags = persistentHashSetOf("F")))
+            assertEquals(
+                mapOf<String, Song>(),
+                librarySource.getSongsByTags(excludeTags = persistentHashSetOf("A"))
+            )
+            assertEquals(
+                mapOf("song3.mp3" to song3),
+                librarySource.getSongsByTags(excludeTags = persistentHashSetOf("B"))
+            )
+            assertEquals(
+                mapOf("song1.mp3" to song1),
+                librarySource.getSongsByTags(excludeTags = persistentHashSetOf("C"))
+            )
+            assertEquals(
+                mapOf("song2.mp3" to song2, "song3.mp3" to song3),
+                librarySource.getSongsByTags(excludeTags = persistentHashSetOf("D"))
+            )
+            assertEquals(
+                mapOf("song1.mp3" to song1, "song3.mp3" to song3),
+                librarySource.getSongsByTags(excludeTags = persistentHashSetOf("E"))
+            )
+            assertEquals(
+                mapOf("song1.mp3" to song1, "song2.mp3" to song2),
+                librarySource.getSongsByTags(excludeTags = persistentHashSetOf("F"))
+            )
 
             // excludes two tags
-            assertEquals(mapOf<String, Song>(), librarySource.getSongsByTags(excludeTags = persistentHashSetOf("A", "B")))
-            assertEquals(mapOf<String, Song>(), librarySource.getSongsByTags(excludeTags = persistentHashSetOf("A", "F")))
-            assertEquals(mapOf<String, Song>(), librarySource.getSongsByTags(excludeTags = persistentHashSetOf("B", "F")))
-            assertEquals(mapOf<String, Song>(), librarySource.getSongsByTags(excludeTags = persistentHashSetOf("C", "D")))
-            assertEquals(mapOf("song3.mp3" to song3), librarySource.getSongsByTags(excludeTags = persistentHashSetOf("B", "D")))
-            assertEquals(mapOf("song1.mp3" to song1), librarySource.getSongsByTags(excludeTags = persistentHashSetOf("C", "F")))
-            assertEquals(mapOf<String, Song>(), librarySource.getSongsByTags(excludeTags = persistentHashSetOf("B", "F")))
-            assertEquals(mapOf<String, Song>(), librarySource.getSongsByTags(excludeTags = persistentHashSetOf("C", "D")))
-            assertEquals(mapOf("song3.mp3" to song3), librarySource.getSongsByTags(excludeTags = persistentHashSetOf("D", "E")))
-            assertEquals(mapOf("song2.mp3" to song2), librarySource.getSongsByTags(excludeTags = persistentHashSetOf("D", "F")))
-            assertEquals(mapOf("song1.mp3" to song1), librarySource.getSongsByTags(excludeTags = persistentHashSetOf("E", "F")))
+            assertEquals(
+                mapOf<String, Song>(),
+                librarySource.getSongsByTags(excludeTags = persistentHashSetOf("A", "B"))
+            )
+            assertEquals(
+                mapOf<String, Song>(),
+                librarySource.getSongsByTags(excludeTags = persistentHashSetOf("A", "F"))
+            )
+            assertEquals(
+                mapOf<String, Song>(),
+                librarySource.getSongsByTags(excludeTags = persistentHashSetOf("B", "F"))
+            )
+            assertEquals(
+                mapOf<String, Song>(),
+                librarySource.getSongsByTags(excludeTags = persistentHashSetOf("C", "D"))
+            )
+            assertEquals(
+                mapOf("song3.mp3" to song3),
+                librarySource.getSongsByTags(excludeTags = persistentHashSetOf("B", "D"))
+            )
+            assertEquals(
+                mapOf("song1.mp3" to song1),
+                librarySource.getSongsByTags(excludeTags = persistentHashSetOf("C", "F"))
+            )
+            assertEquals(
+                mapOf<String, Song>(),
+                librarySource.getSongsByTags(excludeTags = persistentHashSetOf("B", "F"))
+            )
+            assertEquals(
+                mapOf<String, Song>(),
+                librarySource.getSongsByTags(excludeTags = persistentHashSetOf("C", "D"))
+            )
+            assertEquals(
+                mapOf("song3.mp3" to song3),
+                librarySource.getSongsByTags(excludeTags = persistentHashSetOf("D", "E"))
+            )
+            assertEquals(
+                mapOf("song2.mp3" to song2),
+                librarySource.getSongsByTags(excludeTags = persistentHashSetOf("D", "F"))
+            )
+            assertEquals(
+                mapOf("song1.mp3" to song1),
+                librarySource.getSongsByTags(excludeTags = persistentHashSetOf("E", "F"))
+            )
 
             // excludes three tags
-            assertEquals(mapOf<String, Song>(), librarySource.getSongsByTags(excludeTags = persistentHashSetOf("A", "B", "C")))
-            assertEquals(mapOf<String, Song>(), librarySource.getSongsByTags(excludeTags = persistentHashSetOf("A", "B", "D")))
-            assertEquals(mapOf<String, Song>(), librarySource.getSongsByTags(excludeTags = persistentHashSetOf("B", "C", "D")))
-            assertEquals(mapOf("song3.mp3" to song3), librarySource.getSongsByTags(excludeTags = persistentHashSetOf("B", "D", "E")))
-            assertEquals(mapOf<String, Song>(), librarySource.getSongsByTags(excludeTags = persistentHashSetOf("B", "D", "F")))
-            assertEquals(mapOf("song1.mp3" to song1), librarySource.getSongsByTags(excludeTags = persistentHashSetOf("C", "E", "F")))
-            assertEquals(mapOf<String, Song>(), librarySource.getSongsByTags(excludeTags = persistentHashSetOf("C", "E", "D")))
-            assertEquals(mapOf<String, Song>(), librarySource.getSongsByTags(excludeTags = persistentHashSetOf("D", "E", "F")))
+            assertEquals(
+                mapOf<String, Song>(),
+                librarySource.getSongsByTags(excludeTags = persistentHashSetOf("A", "B", "C"))
+            )
+            assertEquals(
+                mapOf<String, Song>(),
+                librarySource.getSongsByTags(excludeTags = persistentHashSetOf("A", "B", "D"))
+            )
+            assertEquals(
+                mapOf<String, Song>(),
+                librarySource.getSongsByTags(excludeTags = persistentHashSetOf("B", "C", "D"))
+            )
+            assertEquals(
+                mapOf("song3.mp3" to song3),
+                librarySource.getSongsByTags(excludeTags = persistentHashSetOf("B", "D", "E"))
+            )
+            assertEquals(
+                mapOf<String, Song>(),
+                librarySource.getSongsByTags(excludeTags = persistentHashSetOf("B", "D", "F"))
+            )
+            assertEquals(
+                mapOf("song1.mp3" to song1),
+                librarySource.getSongsByTags(excludeTags = persistentHashSetOf("C", "E", "F"))
+            )
+            assertEquals(
+                mapOf<String, Song>(),
+                librarySource.getSongsByTags(excludeTags = persistentHashSetOf("C", "E", "D"))
+            )
+            assertEquals(
+                mapOf<String, Song>(),
+                librarySource.getSongsByTags(excludeTags = persistentHashSetOf("D", "E", "F"))
+            )
 
             // excludes four tags
-            assertEquals(mapOf<String, Song>(), librarySource.getSongsByTags(excludeTags = persistentSetOf("B", "D", "E", "F")))
+            assertEquals(
+                mapOf<String, Song>(),
+                librarySource.getSongsByTags(excludeTags = persistentSetOf("B", "D", "E", "F"))
+            )
 
             // include and exclude one tag
-            assertEquals(mapOf<String, Song>(), librarySource.getSongsByTags(persistentHashSetOf("A"), persistentHashSetOf("A")))
-            assertEquals(mapOf("song3.mp3" to song3), librarySource.getSongsByTags(persistentSetOf("A"), persistentSetOf("B")))
-            assertEquals(mapOf("song2.mp3" to song2, "song3.mp3" to song3), librarySource.getSongsByTags(persistentSetOf("A"), persistentSetOf("D")))
-            assertEquals(mapOf("song2.mp3" to song2), librarySource.getSongsByTags(persistentSetOf("B"), persistentSetOf("D")))
-            assertEquals(mapOf("song1.mp3" to song1, "song2.mp3" to song2), librarySource.getSongsByTags(persistentSetOf("B"), persistentSetOf("F")))
-            assertEquals(mapOf("song1.mp3" to song1), librarySource.getSongsByTags(persistentSetOf("D"), persistentSetOf("E")))
+            assertEquals(
+                mapOf<String, Song>(),
+                librarySource.getSongsByTags(persistentHashSetOf("A"), persistentHashSetOf("A"))
+            )
+            assertEquals(
+                mapOf("song3.mp3" to song3),
+                librarySource.getSongsByTags(persistentSetOf("A"), persistentSetOf("B"))
+            )
+            assertEquals(
+                mapOf("song2.mp3" to song2, "song3.mp3" to song3),
+                librarySource.getSongsByTags(persistentSetOf("A"), persistentSetOf("D"))
+            )
+            assertEquals(
+                mapOf("song2.mp3" to song2),
+                librarySource.getSongsByTags(persistentSetOf("B"), persistentSetOf("D"))
+            )
+            assertEquals(
+                mapOf("song1.mp3" to song1, "song2.mp3" to song2),
+                librarySource.getSongsByTags(persistentSetOf("B"), persistentSetOf("F"))
+            )
+            assertEquals(
+                mapOf("song1.mp3" to song1),
+                librarySource.getSongsByTags(persistentSetOf("D"), persistentSetOf("E"))
+            )
 
             // include and exclude two tags
-            assertEquals(mapOf<String, Song>(), librarySource.getSongsByTags(persistentSetOf("A", "B"), persistentSetOf("D", "E")))
-            assertEquals(mapOf("song2.mp3" to song2), librarySource.getSongsByTags(persistentSetOf("A", "B"), persistentSetOf("D", "F")))
-            assertEquals(mapOf<String, Song>(), librarySource.getSongsByTags(persistentSetOf("B", "C"), persistentSetOf("D", "E")))
-            assertEquals(mapOf("song2.mp3" to song2), librarySource.getSongsByTags(persistentSetOf("B", "C"), persistentSetOf("D", "F")))
-            assertEquals(mapOf<String, Song>(), librarySource.getSongsByTags(persistentSetOf("D", "E"), persistentSetOf("C", "F")))
+            assertEquals(
+                mapOf<String, Song>(),
+                librarySource.getSongsByTags(persistentSetOf("A", "B"), persistentSetOf("D", "E"))
+            )
+            assertEquals(
+                mapOf("song2.mp3" to song2),
+                librarySource.getSongsByTags(persistentSetOf("A", "B"), persistentSetOf("D", "F"))
+            )
+            assertEquals(
+                mapOf<String, Song>(),
+                librarySource.getSongsByTags(persistentSetOf("B", "C"), persistentSetOf("D", "E"))
+            )
+            assertEquals(
+                mapOf("song2.mp3" to song2),
+                librarySource.getSongsByTags(persistentSetOf("B", "C"), persistentSetOf("D", "F"))
+            )
+            assertEquals(
+                mapOf<String, Song>(),
+                librarySource.getSongsByTags(persistentSetOf("D", "E"), persistentSetOf("C", "F"))
+            )
 
             // include and exclude three tags
-            assertEquals(mapOf("song2.mp3" to song2), librarySource.getSongsByTags(persistentSetOf("A", "B", "C"), persistentSetOf("D", "F")))
-            assertEquals(mapOf<String, Song>(), librarySource.getSongsByTags(persistentSetOf("A", "B", "C"), persistentSetOf("D", "E", "F")))
+            assertEquals(
+                mapOf("song2.mp3" to song2),
+                librarySource.getSongsByTags(
+                    persistentSetOf("A", "B", "C"),
+                    persistentSetOf("D", "F")
+                )
+            )
+            assertEquals(
+                mapOf<String, Song>(),
+                librarySource.getSongsByTags(
+                    persistentSetOf("A", "B", "C"),
+                    persistentSetOf("D", "E", "F")
+                )
+            )
         }
     }
 

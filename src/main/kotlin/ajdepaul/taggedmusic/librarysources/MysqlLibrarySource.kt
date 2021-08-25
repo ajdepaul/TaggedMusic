@@ -357,7 +357,7 @@ class MysqlLibrarySource(
 
                             // add each tag not in tag map
                             val putTagCs = callableStatements.tagsPut
-                            for (tag in update.song.tags.filterNot { it in allTags.keys }) {
+                            for (tag in update.song.tags - allTags.keys) {
                                 putTagCs.setString("arg_name", tag)
                                 putTagCs.setNull("arg_type", Types.VARCHAR)
                                 putTagCs.setNull("arg_description", Types.VARCHAR)

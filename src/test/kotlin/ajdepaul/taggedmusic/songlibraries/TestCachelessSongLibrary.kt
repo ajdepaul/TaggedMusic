@@ -136,14 +136,15 @@ class TestCachelessSongLibrary {
         var tagType3 = TagType(5)
         cachelessSongLibrary.putTagType("type3", tagType3)
         assertEquals(
-            mapOf("type1" to TagType(100), "type2" to TagType(100), "type3" to TagType(5)),
+            mapOf("type1" to TagType(100), "type2" to TagType(100), "type3" to tagType3),
             jsonLibrarySource.getAllTagTypes()
         )
 
         tagType3 = tagType3.mutate { color = 6 }
+        cachelessSongLibrary.putTagType("type3", tagType3)
 
         assertEquals(
-            mapOf("type1" to TagType(100), "type2" to TagType(100), "type3" to TagType(5)),
+            mapOf("type1" to TagType(100), "type2" to TagType(100), "type3" to tagType3),
             jsonLibrarySource.getAllTagTypes()
         )
 
@@ -166,7 +167,7 @@ class TestCachelessSongLibrary {
         // remove tag type
         cachelessSongLibrary.removeTagType("type2")
         assertEquals(
-            mapOf("type1" to TagType(100), "type3" to TagType(5)),
+            mapOf("type1" to TagType(100), "type3" to tagType3),
             jsonLibrarySource.getAllTagTypes()
         )
 
