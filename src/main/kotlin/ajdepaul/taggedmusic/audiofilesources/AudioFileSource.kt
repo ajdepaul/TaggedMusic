@@ -10,7 +10,7 @@ import java.nio.file.Path
 interface AudioFileSource {
 
     /** Checks if the [AudioFileSource] has the song available to pull. */
-    fun hasAudioFile(fileName: Path): Boolean
+    fun hasAudioFile(fileName: String): Boolean
 
     /**
      * Transfers an audio file from a local path onto the [AudioFileSource].
@@ -18,14 +18,14 @@ interface AudioFileSource {
      * @param fileName the file name the [AudioFileSource] will use to fetch this audio file
      * @return true if success, false if failed
      */
-    fun pushAudioFile(audioPath: Path, fileName: Path = audioPath.fileName): Boolean
+    fun pushAudioFile(audioPath: Path, fileName: String = audioPath.fileName.toString()): Boolean
 
     /**
      * Fetches an audio file from the [AudioFileSource].
      * @return the local path to the song or null if failed
      */
-    fun pullAudioFile(fileName: Path): Path?
+    fun pullAudioFile(fileName: String): Path?
 
     /** Deletes an audio file from the [AudioFileSource]. */
-    fun removeAudioFile(fileName: Path): Boolean
+    fun removeAudioFile(fileName: String): Boolean
 }

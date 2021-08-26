@@ -8,13 +8,13 @@ import java.io.IOException
 import java.nio.file.*
 
 /** [AudioFileSource] that retrieves audio files from a local directory. */
-class LocalAudioFileSource(var songDirectory: Path) : AudioFileSource {
+class LocalAudioFileSource(private val songDirectory: Path) : AudioFileSource {
 
-    override fun hasAudioFile(fileName: Path): Boolean {
+    override fun hasAudioFile(fileName: String): Boolean {
         return songDirectory.resolve(fileName).toFile().isFile
     }
 
-    override fun pushAudioFile(audioPath: Path, fileName: Path): Boolean {
+    override fun pushAudioFile(audioPath: Path, fileName: String): Boolean {
         val dest = songDirectory.resolve(fileName)
         return try {
             Files.copy(audioPath, dest, StandardCopyOption.REPLACE_EXISTING)
@@ -28,12 +28,12 @@ class LocalAudioFileSource(var songDirectory: Path) : AudioFileSource {
         }
     }
 
-    override fun pullAudioFile(fileName: Path): Path? {
+    override fun pullAudioFile(fileName: String): Path? {
         val songFile = songDirectory.resolve(fileName)
         return if (songFile.toFile().isFile) songFile else null
     }
 
-    override fun removeAudioFile(fileName: Path): Boolean {
+    override fun removeAudioFile(fileName: String): Boolean {
         return try {
             songDirectory.resolve(fileName).toFile().delete()
         } catch (_: SecurityException) {

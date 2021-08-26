@@ -12,19 +12,19 @@ class SftpAudioFileSource(
     /** [Session] for opening a connection to the SFTP server. */
     private val session: Session
 ) : AudioFileSource {
-    override fun hasAudioFile(fileName: Path): Boolean {
+    override fun hasAudioFile(fileName: String): Boolean {
         TODO("Not yet implemented")
     }
 
-    override fun pushAudioFile(songPath: Path, fileName: Path): Boolean {
+    override fun pushAudioFile(songPath: Path, fileName: String): Boolean {
         TODO("Not yet implemented")
     }
 
-    override fun pullAudioFile(fileName: Path): Path? {
+    override fun pullAudioFile(fileName: String): Path? {
         TODO("Not yet implemented")
     }
 
-    override fun removeAudioFile(fileName: Path): Boolean {
+    override fun removeAudioFile(fileName: String): Boolean {
         TODO("Not yet implemented")
     }
 }
