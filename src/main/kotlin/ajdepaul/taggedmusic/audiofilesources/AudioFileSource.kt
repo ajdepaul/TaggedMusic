@@ -18,7 +18,7 @@ interface AudioFileSource {
      * @param fileName the file name the [AudioFileSource] will use to fetch this audio file
      * @return true if success, false if failed
      */
-    fun pushAudioFile(audioPath: Path, fileName: Path): Boolean
+    fun pushAudioFile(audioPath: Path, fileName: Path = audioPath.fileName): Boolean
 
     /**
      * Fetches an audio file from the [AudioFileSource].

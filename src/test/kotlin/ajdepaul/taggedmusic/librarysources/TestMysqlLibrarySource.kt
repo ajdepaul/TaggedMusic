@@ -6,17 +6,11 @@ package ajdepaul.taggedmusic.librarysources
 
 import ajdepaul.taggedmusic.TagType
 import com.mysql.jdbc.jdbc2.optional.MysqlDataSource
-import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TemporaryFolder
 import java.nio.file.Paths
 import java.util.*
 
 class TestMysqlLibrarySource {
-
-    @Rule
-    @JvmField
-    val tempDir = TemporaryFolder()
 
     private val testServerProperties = this.javaClass.getResource(
         Paths.get("TestMysqlLibrarySource", "server.properties").toString()
@@ -48,7 +42,7 @@ class TestMysqlLibrarySource {
         return PropertiesData(dataSource, suppFracSec, defaultTagType)
     }
 
-    /** Drops the [tempDatabase] database from the MySQL server. */
+    /** Removes all rows from the in the MySQL server database and resets the default tag type. */
     private fun cleanServer() {
         val (dataSource, suppFracSec, defaultTagType) = loadProperties() ?: return
 

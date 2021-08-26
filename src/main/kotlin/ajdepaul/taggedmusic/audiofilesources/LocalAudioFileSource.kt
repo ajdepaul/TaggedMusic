@@ -4,7 +4,6 @@
  */
 package ajdepaul.taggedmusic.audiofilesources
 
-import java.io.File
 import java.io.IOException
 import java.nio.file.*
 
@@ -15,10 +14,10 @@ class LocalAudioFileSource(var songDirectory: Path) : AudioFileSource {
         return songDirectory.resolve(fileName).toFile().isFile
     }
 
-    override fun pushAudioFile(songPath: Path, fileName: Path): Boolean {
+    override fun pushAudioFile(audioPath: Path, fileName: Path): Boolean {
         val dest = songDirectory.resolve(fileName)
         return try {
-            Files.copy(songPath, dest, StandardCopyOption.REPLACE_EXISTING)
+            Files.copy(audioPath, dest, StandardCopyOption.REPLACE_EXISTING)
             true
         } catch (_: DirectoryNotEmptyException) {
             false

@@ -102,7 +102,8 @@ class TestSftpLibrarySource {
 
         try {
             val sftpDir = tempDir.newFolder("sftpDir").toPath()
-            val jsonLibraryFilePath = tempDir.newFile("sftpDir/library.json").toPath()
+            val jsonLibraryFilePath = sftpDir.resolve("library.json")
+                .also { it.toFile().createNewFile() }
 
             // initialize the server with default values
             SftpLibrarySource(
@@ -147,7 +148,8 @@ class TestSftpLibrarySource {
 
         try {
             val sftpDir = tempDir.newFolder("sftpDir").toPath()
-            val jsonLibraryFilePath = tempDir.newFile("sftpDir/library.json").toPath()
+            val jsonLibraryFilePath = sftpDir.resolve("library.json")
+                .also { it.toFile().createNewFile() }
 
             // test making changes
             val songLibraryData = with(
@@ -194,7 +196,8 @@ class TestSftpLibrarySource {
 
         try {
             val sftpDir = tempDir.newFolder("sftpDir").toPath()
-            val jsonLibraryFilePath = tempDir.newFile("sftpDir/library.json").toPath()
+            val jsonLibraryFilePath = sftpDir.resolve("library.json")
+                .also { it.toFile().createNewFile() }
 
             // use util class for tests
             with(
