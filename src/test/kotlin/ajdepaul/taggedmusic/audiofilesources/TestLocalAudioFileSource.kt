@@ -27,7 +27,8 @@ class TestLocalAudioFileSource {
 
         assertFalse(localAudioFileSource.hasAudioFile("song.mp3"))
 
-        val songFile = songDirectory.resolve("song.mp3").toFile().also { it.createNewFile() }
+        val songFile = songDirectory.resolve("song.mp3").toFile()
+        songFile.createNewFile()
 
         assertTrue(localAudioFileSource.hasAudioFile("song.mp3"))
 
@@ -42,11 +43,13 @@ class TestLocalAudioFileSource {
         val songDirectory = tempDir.newFolder("songs").toPath()
         val localAudioFileSource = LocalAudioFileSource(songDirectory)
 
-        val songFile = tempDir.newFile("song_to_upload.mp3")
-        assertTrue(localAudioFileSource.pushAudioFile(songFile.toPath(), "uploaded_song.mp3"))
-        assertTrue(songDirectory.resolve("uploaded_song.mp3").toFile().isFile)
+        val songFile = tempDir.newFile()
 
-        val blockingDir = songDirectory.resolve("blocking_dir.mp3").toFile().also { it.mkdir() }
+        assertTrue(localAudioFileSource.pushAudioFile(songFile.toPath(), "song.mp3"))
+        assertTrue(songDirectory.resolve("song.mp3").toFile().isFile)
+
+        val blockingDir = songDirectory.resolve("blocking_dir.mp3").toFile()
+        blockingDir.mkdir()
         blockingDir.resolve("filler.txt").createNewFile()
 
         assertFalse(localAudioFileSource.pushAudioFile(songFile.toPath(), "blocking_dir.mp3"))
@@ -61,7 +64,8 @@ class TestLocalAudioFileSource {
 
         assertNull(localAudioFileSource.pullAudioFile("song.mp3"))
 
-        val songFile = songDirectory.resolve("song.mp3").also { it.toFile().createNewFile() }
+        val songFile = songDirectory.resolve("song.mp3")
+        songFile.toFile().createNewFile()
 
         assertEquals(songFile, localAudioFileSource.pullAudioFile("song.mp3"))
 
