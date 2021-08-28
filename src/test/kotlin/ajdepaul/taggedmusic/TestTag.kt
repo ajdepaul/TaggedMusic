@@ -12,7 +12,7 @@ class TestTag {
     /** Tests the default [Tag] values. */
     @Test
     fun testDefaults() {
-        var tag = Tag(null)
+        val tag = Tag(null)
         assertEquals(null, tag.type)
         assertEquals(null, tag.description)
     }

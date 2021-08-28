@@ -5,13 +5,10 @@
 package ajdepaul.taggedmusic.audiofilesources
 
 import com.jcraft.jsch.ChannelSftp
-import com.jcraft.jsch.JSch
 import com.jcraft.jsch.Session
-import com.jcraft.jsch.SftpException
 import org.apache.commons.io.FileUtils
 import java.io.Closeable
 import java.nio.file.Path
-import java.nio.file.Paths
 
 /** [AudioFileSource] that retrieves audio files from a SFTP server. */
 class SftpAudioFileSource(
@@ -53,9 +50,9 @@ class SftpAudioFileSource(
         }
     }
 
-    override fun pushAudioFile(songPath: Path, fileName: String): Boolean {
+    override fun pushAudioFile(audioPath: Path, fileName: String): Boolean {
         return try {
-            channel.put(songPath.toAbsolutePath().toString(), fileName)
+            channel.put(audioPath.toAbsolutePath().toString(), fileName)
             true
         } catch (e: Exception) {
             false

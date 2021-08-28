@@ -32,7 +32,7 @@ abstract class SongLibrary(
 
     companion object {
         /** Indicates what specification this Tagged Music library expects. */
-        val VERSION = "1.0"
+        const val VERSION = "1.0"
     }
 
     init {

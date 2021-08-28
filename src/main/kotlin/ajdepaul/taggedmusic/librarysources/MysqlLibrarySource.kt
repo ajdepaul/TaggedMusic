@@ -239,12 +239,11 @@ class MysqlLibrarySource(
 /* ------------------------------------------ Updating ------------------------------------------ */
 
     override fun updater(): LibrarySource.UpdateBuilder {
-        return UpdateBuilder(connection, suppFracSec, callableStatements)
+        return UpdateBuilder(suppFracSec, callableStatements)
     }
 
     /** See [LibrarySource.UpdateBuilder]. */
     private class UpdateBuilder(
-        private val connection: Connection,
         private val suppFracSec: Boolean,
         private val callableStatements: CallableStatements
     ) : LibrarySource.UpdateBuilder {
@@ -300,156 +299,153 @@ class MysqlLibrarySource(
         }
 
         override fun commit() {
-            with(connection.createStatement()) {
+            // add each update to the batch
+            while (updateQueue.isNotEmpty()) {
+                when (val update = updateQueue.remove()) {
 
-                // add each update to the batch
-                while (updateQueue.isNotEmpty()) {
-                    when (val update = updateQueue.remove()) {
-
-                        is LibrarySource.SetDefaultTagTypeUpdate -> {
-                            val cs = callableStatements.tagTypesPut
-                            cs.setString("arg_name", "")
-                            cs.setInt("arg_color", update.tagType.color)
-                            cs.executeQuery().close()
-                        }
-
-                        is LibrarySource.PutSongUpdate -> {
-                            // put song
-                            val songCs = callableStatements.songsPut
-
-                            songCs.setString("arg_file_name", update.fileName)
-                            songCs.setString("arg_title", update.song.title)
-                            songCs.setInt("arg_duration", update.song.duration)
-
-                            if (update.song.trackNum != null)
-                                songCs.setInt("arg_track_num", update.song.trackNum)
-                            else
-                                songCs.setNull("arg_track_num", Types.INTEGER)
-
-                            if (update.song.releaseDate != null)
-                                songCs.setLocalDateTime("arg_release_date", update.song.releaseDate)
-                            else
-                                songCs.setNull("arg_release_date", Types.TIMESTAMP)
-
-                            songCs.setLocalDateTime("arg_create_date", update.song.createDate)
-                            songCs.setLocalDateTime("arg_modify_date", update.song.modifyDate)
-                            songCs.setInt("arg_play_count", update.song.playCount)
-
-                            songCs.executeQuery().close()
-
-                            // remove stored song tags
-                            val removeTagsCs = callableStatements.songHasTagRemoveAllForSong
-                            removeTagsCs.setString("arg_song_file", update.fileName)
-                            removeTagsCs.executeQuery().close()
-
-                            // check tag map
-                            val selectAllTagsCs = callableStatements.tagsSelectAll
-                            val allTags = with(selectAllTagsCs.executeQuery()) {
-                                val result = persistentHashMapOf<String, Tag>().builder()
-
-                                while (this.next()) {
-                                    result[this.getString("name")] =
-                                        Tag(this.getString("type"), this.getString("description"))
-                                }
-
-                                result.build()
-                            }
-
-                            // add each tag not in tag map
-                            val putTagCs = callableStatements.tagsPut
-                            for (tag in update.song.tags - allTags.keys) {
-                                putTagCs.setString("arg_name", tag)
-                                putTagCs.setNull("arg_type", Types.VARCHAR)
-                                putTagCs.setNull("arg_description", Types.VARCHAR)
-                                putTagCs.addBatch()
-                            }
-                            putTagCs.executeBatch()
-
-                            // store new song tags
-                            val putHasTagCs = callableStatements.songHasTagPut
-                            for (tag in update.song.tags) {
-                                putHasTagCs.setString("arg_song_file", update.fileName)
-                                putHasTagCs.setString("arg_tag", tag)
-                                putHasTagCs.addBatch()
-                            }
-                            putHasTagCs.executeBatch()
-                        }
-
-                        is LibrarySource.RemoveSongUpdate -> {
-                            val cs = callableStatements.songsRemove
-                            cs.setString("arg_file_name", update.fileName)
-                            cs.executeQuery().close()
-                        }
-
-                        is LibrarySource.PutTagUpdate -> {
-                            // check if tag type exists
-                            if (update.tag.type != null) {
-                                val tagTypesSelectCs = callableStatements.tagTypesSelect
-                                tagTypesSelectCs.setString("arg_name", update.tag.type)
-
-                                if (!with(tagTypesSelectCs.executeQuery()) { this.next() }) {
-                                    // get default tag type
-                                    val defaultTagType =
-                                        with(callableStatements.tagTypesGetDefault.executeQuery()) {
-                                            this.first()
-                                            TagType(this.getInt("color"))
-                                        }
-
-                                    // add new tag type
-                                    val tagTypesPutCs = callableStatements.tagTypesPut
-                                    tagTypesPutCs.setString("arg_name", update.tag.type)
-                                    tagTypesPutCs.setInt("arg_color", defaultTagType.color)
-                                    tagTypesPutCs.executeQuery().close()
-                                }
-                            }
-
-                            // add tag
-                            val tagCs = callableStatements.tagsPut
-                            tagCs.setString("arg_name", update.tagName)
-                            tagCs.setString("arg_type", update.tag.type)
-
-                            if (update.tag.description != null)
-                                tagCs.setString("arg_description", update.tag.description)
-                            else
-                                tagCs.setNull("arg_description", Types.VARCHAR)
-
-                            tagCs.executeQuery().close()
-                        }
-
-                        is LibrarySource.RemoveTagUpdate -> {
-                            val cs = callableStatements.tagsRemove
-                            cs.setString("arg_name", update.tagName)
-                            cs.executeQuery().close()
-                        }
-
-                        is LibrarySource.PutTagTypeUpdate -> {
-                            val cs = callableStatements.tagTypesPut
-                            cs.setString("arg_name", update.tagTypeName)
-                            cs.setInt("arg_color", update.tagType.color)
-                            cs.executeQuery().close()
-                        }
-
-                        is LibrarySource.RemoveTagTypeUpdate -> {
-                            val cs = callableStatements.tagTypesRemove
-                            cs.setString("arg_name", update.tagTypeName)
-                            cs.executeQuery().close()
-                        }
-
-                        is LibrarySource.PutDataUpdate -> {
-                            val cs = callableStatements.dataPut
-                            cs.setString("arg_k", update.key)
-                            cs.setString("arg_v", update.value)
-                            cs.executeQuery().close()
-                        }
-
-                        is LibrarySource.RemoveDataUpdate -> {
-                            val cs = callableStatements.dataRemove
-                            cs.setString("arg_k", update.key)
-                            cs.executeQuery().close()
-                        }
-
-                        else -> error("Unexpected LibrarySource.Update type.")
+                    is LibrarySource.SetDefaultTagTypeUpdate -> {
+                        val cs = callableStatements.tagTypesPut
+                        cs.setString("arg_name", "")
+                        cs.setInt("arg_color", update.tagType.color)
+                        cs.executeQuery().close()
                     }
+
+                    is LibrarySource.PutSongUpdate -> {
+                        // put song
+                        val songCs = callableStatements.songsPut
+
+                        songCs.setString("arg_file_name", update.fileName)
+                        songCs.setString("arg_title", update.song.title)
+                        songCs.setInt("arg_duration", update.song.duration)
+
+                        if (update.song.trackNum != null)
+                            songCs.setInt("arg_track_num", update.song.trackNum)
+                        else
+                            songCs.setNull("arg_track_num", Types.INTEGER)
+
+                        if (update.song.releaseDate != null)
+                            songCs.setLocalDateTime("arg_release_date", update.song.releaseDate)
+                        else
+                            songCs.setNull("arg_release_date", Types.TIMESTAMP)
+
+                        songCs.setLocalDateTime("arg_create_date", update.song.createDate)
+                        songCs.setLocalDateTime("arg_modify_date", update.song.modifyDate)
+                        songCs.setInt("arg_play_count", update.song.playCount)
+
+                        songCs.executeQuery().close()
+
+                        // remove stored song tags
+                        val removeTagsCs = callableStatements.songHasTagRemoveAllForSong
+                        removeTagsCs.setString("arg_song_file", update.fileName)
+                        removeTagsCs.executeQuery().close()
+
+                        // check tag map
+                        val selectAllTagsCs = callableStatements.tagsSelectAll
+                        val allTags = with(selectAllTagsCs.executeQuery()) {
+                            val result = persistentHashMapOf<String, Tag>().builder()
+
+                            while (this.next()) {
+                                result[this.getString("name")] =
+                                    Tag(this.getString("type"), this.getString("description"))
+                            }
+
+                            result.build()
+                        }
+
+                        // add each tag not in tag map
+                        val putTagCs = callableStatements.tagsPut
+                        for (tag in update.song.tags - allTags.keys) {
+                            putTagCs.setString("arg_name", tag)
+                            putTagCs.setNull("arg_type", Types.VARCHAR)
+                            putTagCs.setNull("arg_description", Types.VARCHAR)
+                            putTagCs.addBatch()
+                        }
+                        putTagCs.executeBatch()
+
+                        // store new song tags
+                        val putHasTagCs = callableStatements.songHasTagPut
+                        for (tag in update.song.tags) {
+                            putHasTagCs.setString("arg_song_file", update.fileName)
+                            putHasTagCs.setString("arg_tag", tag)
+                            putHasTagCs.addBatch()
+                        }
+                        putHasTagCs.executeBatch()
+                    }
+
+                    is LibrarySource.RemoveSongUpdate -> {
+                        val cs = callableStatements.songsRemove
+                        cs.setString("arg_file_name", update.fileName)
+                        cs.executeQuery().close()
+                    }
+
+                    is LibrarySource.PutTagUpdate -> {
+                        // check if tag type exists
+                        if (update.tag.type != null) {
+                            val tagTypesSelectCs = callableStatements.tagTypesSelect
+                            tagTypesSelectCs.setString("arg_name", update.tag.type)
+
+                            if (!with(tagTypesSelectCs.executeQuery()) { this.next() }) {
+                                // get default tag type
+                                val defaultTagType =
+                                    with(callableStatements.tagTypesGetDefault.executeQuery()) {
+                                        this.first()
+                                        TagType(this.getInt("color"))
+                                    }
+
+                                // add new tag type
+                                val tagTypesPutCs = callableStatements.tagTypesPut
+                                tagTypesPutCs.setString("arg_name", update.tag.type)
+                                tagTypesPutCs.setInt("arg_color", defaultTagType.color)
+                                tagTypesPutCs.executeQuery().close()
+                            }
+                        }
+
+                        // add tag
+                        val tagCs = callableStatements.tagsPut
+                        tagCs.setString("arg_name", update.tagName)
+                        tagCs.setString("arg_type", update.tag.type)
+
+                        if (update.tag.description != null)
+                            tagCs.setString("arg_description", update.tag.description)
+                        else
+                            tagCs.setNull("arg_description", Types.VARCHAR)
+
+                        tagCs.executeQuery().close()
+                    }
+
+                    is LibrarySource.RemoveTagUpdate -> {
+                        val cs = callableStatements.tagsRemove
+                        cs.setString("arg_name", update.tagName)
+                        cs.executeQuery().close()
+                    }
+
+                    is LibrarySource.PutTagTypeUpdate -> {
+                        val cs = callableStatements.tagTypesPut
+                        cs.setString("arg_name", update.tagTypeName)
+                        cs.setInt("arg_color", update.tagType.color)
+                        cs.executeQuery().close()
+                    }
+
+                    is LibrarySource.RemoveTagTypeUpdate -> {
+                        val cs = callableStatements.tagTypesRemove
+                        cs.setString("arg_name", update.tagTypeName)
+                        cs.executeQuery().close()
+                    }
+
+                    is LibrarySource.PutDataUpdate -> {
+                        val cs = callableStatements.dataPut
+                        cs.setString("arg_k", update.key)
+                        cs.setString("arg_v", update.value)
+                        cs.executeQuery().close()
+                    }
+
+                    is LibrarySource.RemoveDataUpdate -> {
+                        val cs = callableStatements.dataRemove
+                        cs.setString("arg_k", update.key)
+                        cs.executeQuery().close()
+                    }
+
+                    else -> error("Unexpected LibrarySource.Update type.")
                 }
             }
         }
@@ -470,78 +466,83 @@ class MysqlLibrarySource(
 /* ---------------------------------- MySQL Callable Statements --------------------------------- */
 
     /** Utility class for [CallableStatements] to execute procedures on the MySQL server. */
-    private class CallableStatements(val connection: Connection) {
+    private class CallableStatements(connection: Connection) {
 
         /* ----- Retrieving Procedures -----*/
 
         /** Result: the version of the library. */
-        val libraryGetVersion = connection.prepareCall("{call Library_get_version()}")
+        val libraryGetVersion: CallableStatement =
+            connection.prepareCall("{call Library_get_version()}")
 
         /** Result: the default tag type. */
-        val tagTypesGetDefault = connection.prepareCall("{call TagTypes_get_default()}")
+        val tagTypesGetDefault: CallableStatement =
+            connection.prepareCall("{call TagTypes_get_default()}")
 
         /** Result: the `file_name` song. */
-        val songsSelect = connection.prepareCall("{call Songs_select(?)}")
+        val songsSelect: CallableStatement = connection.prepareCall("{call Songs_select(?)}")
 
         /** Result: all the songs. */
-        val songsSelectAll = connection.prepareCall("{call Songs_select_all()}")
+        val songsSelectAll: CallableStatement = connection.prepareCall("{call Songs_select_all()}")
 
         /** Result: the `name` tag. */
-        val tagsSelect = connection.prepareCall("{call Tags_select(?)}")
+        val tagsSelect: CallableStatement = connection.prepareCall("{call Tags_select(?)}")
 
         /** Result: all the tags. */
-        val tagsSelectAll = connection.prepareCall("{call Tags_select_all()}")
+        val tagsSelectAll: CallableStatement = connection.prepareCall("{call Tags_select_all()}")
 
         /** Result: the `name` tag type. */
-        val tagTypesSelect = connection.prepareCall("{call TagTypes_select(?)}")
+        val tagTypesSelect: CallableStatement = connection.prepareCall("{call TagTypes_select(?)}")
 
         /** Result: all the tag types. */
-        val tagTypesSelectAll = connection.prepareCall("{call TagTypes_select_all()}")
+        val tagTypesSelectAll: CallableStatement =
+            connection.prepareCall("{call TagTypes_select_all()}")
 
         /** Result: all the tags that `file_name` song has. */
-        val songHasTagSelectSongTags =
+        val songHasTagSelectSongTags: CallableStatement =
             connection.prepareCall("{call SongHasTag_select_song_tags(?)}")
 
         /** Result: all song has tags relationships. */
-        val songHasTagSelectAll = connection.prepareCall("{call SongHasTag_select_all()}")
+        val songHasTagSelectAll: CallableStatement =
+            connection.prepareCall("{call SongHasTag_select_all()}")
 
         /** Result: the `k` data entry. */
-        val dataSelect = connection.prepareCall("{call Data_select(?)}")
+        val dataSelect: CallableStatement = connection.prepareCall("{call Data_select(?)}")
 
         /** Result: all the data entries. */
-        val dataSelectAll = connection.prepareCall("{call Data_select_all()}")
+        val dataSelectAll: CallableStatement = connection.prepareCall("{call Data_select_all()}")
 
         /* ----- Updating Procedures -----*/
 
         /** Inserts/updates a song. */
-        val songsPut = connection.prepareCall("{call Songs_put(?, ?, ?, ?, ?, ?, ?, ?)}")
+        val songsPut: CallableStatement =
+            connection.prepareCall("{call Songs_put(?, ?, ?, ?, ?, ?, ?, ?)}")
 
         /** Removes a song. */
-        val songsRemove = connection.prepareCall("{call Songs_remove(?)}")
+        val songsRemove: CallableStatement = connection.prepareCall("{call Songs_remove(?)}")
 
         /** Inserts/updates a tag. */
-        val tagsPut = connection.prepareCall("{call Tags_put(?, ?, ?)}")
+        val tagsPut: CallableStatement = connection.prepareCall("{call Tags_put(?, ?, ?)}")
 
         /** Removes a tag. */
-        val tagsRemove = connection.prepareCall("{call Tags_remove(?)}")
+        val tagsRemove: CallableStatement = connection.prepareCall("{call Tags_remove(?)}")
 
         /** Inserts/updates a tag type.  */
-        val tagTypesPut = connection.prepareCall("{call TagTypes_put(?, ?)}")
+        val tagTypesPut: CallableStatement = connection.prepareCall("{call TagTypes_put(?, ?)}")
 
         /** Removes a tag type. */
-        val tagTypesRemove = connection.prepareCall("{call TagTypes_remove(?)}")
+        val tagTypesRemove: CallableStatement = connection.prepareCall("{call TagTypes_remove(?)}")
 
         /** Inserts a new song has tag relationship. */
-        val songHasTagPut = connection.prepareCall("{call SongHasTag_put(?, ?)}")
+        val songHasTagPut: CallableStatement = connection.prepareCall("{call SongHasTag_put(?, ?)}")
 
         /** Removes all song has tag relationships for a song. */
-        val songHasTagRemoveAllForSong =
+        val songHasTagRemoveAllForSong: CallableStatement =
             connection.prepareCall("{call SongHasTag_remove_all_for_song(?)}")
 
         /** Inserts/updates a data entry. */
-        val dataPut = connection.prepareCall("{call Data_put(?, ?)}")
+        val dataPut: CallableStatement = connection.prepareCall("{call Data_put(?, ?)}")
 
         /** Removes a data entry. */
-        val dataRemove = connection.prepareCall("{call Data_remove(?)}")
+        val dataRemove: CallableStatement = connection.prepareCall("{call Data_remove(?)}")
     }
 }

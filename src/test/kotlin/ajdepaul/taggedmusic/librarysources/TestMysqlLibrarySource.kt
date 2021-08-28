@@ -44,7 +44,7 @@ class TestMysqlLibrarySource {
 
     /** Removes all rows from the in the MySQL server database and resets the default tag type. */
     private fun cleanServer() {
-        val (dataSource, suppFracSec, defaultTagType) = loadProperties() ?: return
+        val (dataSource, _, defaultTagType) = loadProperties() ?: return
 
         val prop = Properties()
         prop.load(testServerProperties!!.openStream())
@@ -93,7 +93,7 @@ class TestMysqlLibrarySource {
         }
     }
 
-    /** Tests [MysqlDataSource.updater]. */
+    /** Tests [MysqlLibrarySource.updater]. */
     @Test
     fun testUpdater() {
         val propertiesData = loadProperties()

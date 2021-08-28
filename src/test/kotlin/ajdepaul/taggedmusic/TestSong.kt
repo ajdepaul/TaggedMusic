@@ -24,7 +24,7 @@ class TestSong {
     /** Tests the default [Song] values. */
     @Test
     fun testDefaults() {
-        var song = Song("title", 1000)
+        val song = Song("title", 1000)
         assertEquals("title", song.title)
         assertEquals(1000, song.duration)
         assertEquals(null, song.trackNum)
