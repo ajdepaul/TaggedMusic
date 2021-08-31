@@ -6,6 +6,7 @@ package ajdepaul.taggedmusic.librarysources
 
 import ajdepaul.taggedmusic.TagType
 import com.mysql.jdbc.jdbc2.optional.MysqlDataSource
+import org.junit.After
 import org.junit.Test
 import java.nio.file.Paths
 import java.util.*
@@ -43,7 +44,8 @@ class TestMysqlLibrarySource {
     }
 
     /** Removes all rows from the in the MySQL server database and resets the default tag type. */
-    private fun cleanServer() {
+    @After
+    fun cleanServer() {
         val (dataSource, _, defaultTagType) = loadProperties() ?: return
 
         val prop = Properties()
@@ -83,13 +85,8 @@ class TestMysqlLibrarySource {
 
         val (dataSource, suppFracSec, defaultTagType) = propertiesData
 
-        try {
-            with(MysqlLibrarySource(dataSource, suppFracSec)) {
-                TestLibrarySourceUtil.assertDefaults(this, defaultTagType)
-            }
-
-        } finally {
-            cleanServer()
+        with(MysqlLibrarySource(dataSource, suppFracSec)) {
+            TestLibrarySourceUtil.assertDefaults(this, defaultTagType)
         }
     }
 
@@ -108,19 +105,14 @@ class TestMysqlLibrarySource {
 
         val (dataSource, suppFracSec, _) = propertiesData
 
-        try {
-            // test making changes
-            val songLibraryData = with(MysqlLibrarySource(dataSource, suppFracSec)) {
-                TestLibrarySourceUtil.assertUpdates(this)
-            }
+        // test making changes
+        val songLibraryData = with(MysqlLibrarySource(dataSource, suppFracSec)) {
+            TestLibrarySourceUtil.assertUpdates(this)
+        }
 
-            // test changes were saved
-            with(MysqlLibrarySource(dataSource, suppFracSec)) {
-                TestLibrarySourceUtil.assertUpdated(this, songLibraryData)
-            }
-
-        } finally {
-            cleanServer()
+        // test changes were saved
+        with(MysqlLibrarySource(dataSource, suppFracSec)) {
+            TestLibrarySourceUtil.assertUpdated(this, songLibraryData)
         }
     }
 
@@ -139,14 +131,9 @@ class TestMysqlLibrarySource {
 
         val (dataSource, suppFracSec, _) = propertiesData
 
-        try {
-            // use util class for tests
-            with(MysqlLibrarySource(dataSource, suppFracSec)) {
-                TestLibrarySourceUtil.testGetSongsByTags(this)
-            }
-
-        } finally {
-            cleanServer()
+        // use util class for tests
+        with(MysqlLibrarySource(dataSource, suppFracSec)) {
+            TestLibrarySourceUtil.testGetSongsByTags(this)
         }
     }
 

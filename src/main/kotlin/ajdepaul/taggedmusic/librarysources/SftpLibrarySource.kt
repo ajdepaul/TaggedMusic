@@ -28,7 +28,7 @@ import java.nio.file.Path
  * @throws com.jcraft.jsch.JSchException if there is an issue connecting to the SFTP server or
  * uploading/creating remote files/directories
  * @throws java.io.IOException if there is an issue creating local directories
- * [session]
+ * @throws com.jcraft.jsch.SftpException if there is an issue creating remote directories
  */
 class SftpLibrarySource(
     /** [Session] for opening a connection to the SFTP server. */
@@ -65,30 +65,26 @@ class SftpLibrarySource(
         FileUtils.forceMkdir(localDirectory.toFile())
         channel.lcd(localDirectory.toString())
 
-        // remote working directory
-        if (initialize) {
-            // create remote directory one directory at a time & cd into it
-            for (nextDir in remoteDirectory) {
-                // check if the next directory exists
-                if (channel.ls(".")
-                        .map { it as ChannelSftp.LsEntry }
-                        .none { it.filename == nextDir.toString() }
-                ) {
-                    // make it if it doesn't
-                    channel.mkdir(nextDir.toString())
-                }
-                // if the there is a file with the nextDir name, let it throw an exception
-                channel.cd(nextDir.toString())
+        // create remote directory one directory at a time & cd into it
+        for (nextDir in remoteDirectory) {
+            // check if the next directory exists
+            if (channel.ls(".")
+                    .map { it as ChannelSftp.LsEntry }
+                    .none { it.filename == nextDir.toString() }
+            ) {
+                // make it if it doesn't
+                channel.mkdir(nextDir.toString())
             }
+            // if the there is a file with the nextDir name, let it throw an exception
+            channel.cd(nextDir.toString())
+        }
 
+        if (initialize) {
             // upload local library required files
             for (f in requiredFiles) {
                 channel.put(f.toString(), f.toString())
             }
-
         } else {
-            channel.cd(remoteDirectory.toString())
-
             // download local library required files
             for (f in requiredFiles) {
                 channel.get(f.toString(), f.toString())

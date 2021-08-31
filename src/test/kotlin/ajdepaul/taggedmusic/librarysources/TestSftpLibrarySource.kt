@@ -8,6 +8,7 @@ import ajdepaul.taggedmusic.TagType
 import com.jcraft.jsch.ChannelSftp
 import com.jcraft.jsch.JSch
 import com.jcraft.jsch.Session
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -54,7 +55,8 @@ class TestSftpLibrarySource {
     }
 
     /** Removes the temporary files created in the SFTP server. */
-    private fun cleanServer() {
+    @After
+    fun cleanServer() {
         val session = loadProperties() ?: return
 
         try {
@@ -64,7 +66,12 @@ class TestSftpLibrarySource {
 
             // recursively deletes files in a SFTP directory
             fun emptyDir(dirName: String) {
-                channel.cd(dirName)
+                // cd into next directory, give up if failed
+                try {
+                    channel.cd(dirName)
+                } catch (_: Exception) {
+                    return
+                }
 
                 for (entry in channel.ls(".")) {
                     val lsEntry = entry as ChannelSftp.LsEntry
@@ -100,38 +107,33 @@ class TestSftpLibrarySource {
             return
         }
 
-        try {
-            val sftpDir = tempDir.newFolder("sftpDir").toPath()
-            val jsonLibraryFilePath = sftpDir.resolve("library.json")
-            jsonLibraryFilePath.toFile().createNewFile()
+        val sftpDir = tempDir.newFolder("sftpDir").toPath()
+        val jsonLibraryFilePath = sftpDir.resolve("library.json")
+        jsonLibraryFilePath.toFile().createNewFile()
 
-            // initialize the server with default values
+        // initialize the server with default values
+        SftpLibrarySource(
+            loadProperties()!!,
+            listOf(Paths.get("library.json")),
+            sftpDir,
+            remoteTempDir.resolve(Paths.get("testConstructor", "test")),
+            JsonLibrarySource(jsonLibraryFilePath, TagType(0)),
+            true
+        ).close()
+
+        jsonLibraryFilePath.toFile().delete()
+
+        // test new library source using that server
+        with(
             SftpLibrarySource(
-                loadProperties() ?: return,
+                loadProperties()!!,
                 listOf(Paths.get("library.json")),
                 sftpDir,
                 remoteTempDir.resolve(Paths.get("testConstructor", "test")),
-                JsonLibrarySource(jsonLibraryFilePath, TagType(0)),
-                true
-            ).close()
-
-            jsonLibraryFilePath.toFile().delete()
-
-            // test new library source using that server
-            with(
-                SftpLibrarySource(
-                    loadProperties() ?: return,
-                    listOf(Paths.get("library.json")),
-                    sftpDir,
-                    remoteTempDir.resolve(Paths.get("testConstructor", "test")),
-                    JsonLibrarySource(jsonLibraryFilePath)
-                )
-            ) {
-                TestLibrarySourceUtil.assertDefaults(this)
-            }
-
-        } finally {
-            cleanServer()
+                JsonLibrarySource(jsonLibraryFilePath)
+            )
+        ) {
+            TestLibrarySourceUtil.assertDefaults(this)
         }
     }
 
@@ -146,40 +148,35 @@ class TestSftpLibrarySource {
             return
         }
 
-        try {
-            val sftpDir = tempDir.newFolder("sftpDir").toPath()
-            val jsonLibraryFilePath = sftpDir.resolve("library.json")
-            jsonLibraryFilePath.toFile().createNewFile()
+        val sftpDir = tempDir.newFolder("sftpDir").toPath()
+        val jsonLibraryFilePath = sftpDir.resolve("library.json")
+        jsonLibraryFilePath.toFile().createNewFile()
 
-            // test making changes
-            val songLibraryData = with(
-                SftpLibrarySource(
-                    loadProperties() ?: return,
-                    listOf(Paths.get("library.json")),
-                    sftpDir,
-                    remoteTempDir.resolve(Paths.get("testUpdater")),
-                    JsonLibrarySource(jsonLibraryFilePath, TagType(0)),
-                    true
-                )
-            ) {
-                TestLibrarySourceUtil.assertUpdates(this)
-            }
+        // test making changes
+        val songLibraryData = with(
+            SftpLibrarySource(
+                loadProperties()!!,
+                listOf(Paths.get("library.json")),
+                sftpDir,
+                remoteTempDir.resolve(Paths.get("testUpdater")),
+                JsonLibrarySource(jsonLibraryFilePath, TagType(0)),
+                true
+            )
+        ) {
+            TestLibrarySourceUtil.assertUpdates(this)
+        }
 
-            // test changes were saved
-            with(
-                SftpLibrarySource(
-                    loadProperties() ?: return,
-                    listOf(Paths.get("library.json")),
-                    sftpDir,
-                    remoteTempDir.resolve(Paths.get("testUpdater")),
-                    JsonLibrarySource(jsonLibraryFilePath)
-                )
-            ) {
-                TestLibrarySourceUtil.assertUpdated(this, songLibraryData)
-            }
-
-        } finally {
-            cleanServer()
+        // test changes were saved
+        with(
+            SftpLibrarySource(
+                loadProperties()!!,
+                listOf(Paths.get("library.json")),
+                sftpDir,
+                remoteTempDir.resolve(Paths.get("testUpdater")),
+                JsonLibrarySource(jsonLibraryFilePath)
+            )
+        ) {
+            TestLibrarySourceUtil.assertUpdated(this, songLibraryData)
         }
     }
 
@@ -194,27 +191,22 @@ class TestSftpLibrarySource {
             return
         }
 
-        try {
-            val sftpDir = tempDir.newFolder("sftpDir").toPath()
-            val jsonLibraryFilePath = sftpDir.resolve("library.json")
-            jsonLibraryFilePath.toFile().createNewFile()
+        val sftpDir = tempDir.newFolder("sftpDir").toPath()
+        val jsonLibraryFilePath = sftpDir.resolve("library.json")
+        jsonLibraryFilePath.toFile().createNewFile()
 
-            // use util class for tests
-            with(
-                SftpLibrarySource(
-                    loadProperties() ?: return,
-                    listOf(Paths.get("library.json")),
-                    sftpDir,
-                    remoteTempDir.resolve(Paths.get("testGetSongsByTags")),
-                    JsonLibrarySource(jsonLibraryFilePath, TagType(0)),
-                    true
-                )
-            ) {
-                TestLibrarySourceUtil.testGetSongsByTags(this)
-            }
-
-        } finally {
-            cleanServer()
+        // use util class for tests
+        with(
+            SftpLibrarySource(
+                loadProperties()!!,
+                listOf(Paths.get("library.json")),
+                sftpDir,
+                remoteTempDir.resolve(Paths.get("testGetSongsByTags")),
+                JsonLibrarySource(jsonLibraryFilePath, TagType(0)),
+                true
+            )
+        ) {
+            TestLibrarySourceUtil.testGetSongsByTags(this)
         }
     }
 }

@@ -10,7 +10,11 @@ import org.apache.commons.io.FileUtils
 import java.io.Closeable
 import java.nio.file.Path
 
-/** [AudioFileSource] that retrieves audio files from a SFTP server. */
+/**
+ * [AudioFileSource] that retrieves audio files from a SFTP server.
+ * @throws java.io.IOException if there is an issue creating local directories
+ * @throws com.jcraft.jsch.SftpException if there is an issue creating remote directories
+ */
 class SftpAudioFileSource(
     /** [Session] for opening a connection to the SFTP server. */
     private val session: Session,
@@ -34,8 +38,19 @@ class SftpAudioFileSource(
         FileUtils.forceMkdir(localDirectory.toFile())
         channel.lcd(localDirectory.toString())
 
-        // remote working directory
-        channel.cd(remoteDirectory.toString())
+        // create remote directory one directory at a time & cd into it
+        for (nextDir in remoteDirectory) {
+            // check if the next directory exists
+            if (channel.ls(".")
+                    .map { it as ChannelSftp.LsEntry }
+                    .none { it.filename == nextDir.toString() }
+            ) {
+                // make it if it doesn't
+                channel.mkdir(nextDir.toString())
+            }
+            // if the there is a file with the nextDir name, let it throw an exception
+            channel.cd(nextDir.toString())
+        }
     }
 
     override fun close() {
