@@ -7,6 +7,9 @@ plugins {
     id 'eclipse'
 }
 
+group 'ajdepaul'
+version '1.0'
+
 repositories {
     jcenter()
 }
@@ -38,8 +41,4 @@ dependencies {
 
     // https://mvnrepository.com/artifact/commons-io/commons-io TODO check license
     implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
-}
-
-jar {
-    version = "1.0.0"
 }
