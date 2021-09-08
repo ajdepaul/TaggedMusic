@@ -16,7 +16,7 @@ import java.io.Closeable
 import java.nio.file.Path
 
 /**
- * [LibrarySource] that retrieves required files from a SFTP server for the wrapped
+ * [LibrarySource] that retrieves required files from an SFTP server for the wrapped
  * [localLibrarySource] that relies on local files to store
  * [SongLibrary][ajdepaul.taggedmusic.songlibraries.SongLibrary] data. The files will be fetched
  * from the SFTP server when instantiated.

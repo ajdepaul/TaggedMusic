@@ -11,7 +11,7 @@ import java.io.Closeable
 import java.nio.file.Path
 
 /**
- * [AudioFileSource] that retrieves audio files from a SFTP server.
+ * [AudioFileSource] that retrieves audio files from an SFTP server.
  * @throws java.io.IOException if there is an issue creating local directories
  * @throws com.jcraft.jsch.SftpException if there is an issue creating remote directories
  */

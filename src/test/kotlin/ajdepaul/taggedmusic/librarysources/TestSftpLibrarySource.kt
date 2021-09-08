@@ -64,7 +64,7 @@ class TestSftpLibrarySource {
             val channel = session.openChannel("sftp") as ChannelSftp
             channel.connect()
 
-            // recursively deletes files in a SFTP directory
+            // recursively deletes files in an SFTP directory
             fun emptyDir(dirName: String) {
                 // cd into next directory, give up if failed
                 try {
