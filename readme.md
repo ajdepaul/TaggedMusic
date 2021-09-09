@@ -23,7 +23,7 @@ Run `./gradlew build` to compile. The output is located in [build/libs](build/li
 
 ### Testing
 
-Run `./gradlew test` to run tests. Tests for remote sources (e.g. MySQL Library Source, Sftp Audio
+Run `./gradlew test` to run tests. Tests for remote sources (e.g. MySQL Library Source, SFTP Audio
 File Source) require a server to test modifications. To run these tests properly, edit the
 `server.properties` files located in the [test resources](src/test/resources/ajdepaul/taggedmusic).
 
@@ -31,64 +31,61 @@ File Source) require a server to test modifications. To run these tests properly
 
 Song libraries are set up as four maps: 
 
-| Map        | Key                                                             | Value                    |
-| ---------- | --------------------------------------------------------------- | ------------------------ |
-| `songs`    | file name in [audio file source](#Audio-File-Sources): `String` | song data: `Song`        |
-| `tags`     | tag name: `String`                                              | tag data: `Tag`          |
-| `tagTypes` | tag type name: `String`                                         | tag type data: `TagType` |
-| `data`     | key: `String`                                                   | value: `String`          |
+| Map        | Key                                                             | Value     |
+| ---------- | --------------------------------------------------------------- | --------- |
+| `songs`    | file name in [audio file source](#Audio-File-Sources): `String` | `Song`    |
+| `tags`     | tag name: `String`                                              | `Tag`     |
+| `tagTypes` | tag type name: `String`                                         | `TagType` |
+| `data`     | key: `String`                                                   | `String`  |
 
 There is also an additional default tag type value stored that should be used when a tag's type is
 set to `null`.
 
-You can interact with each of the maps by utilizing the `has`, `get`, `getAll`, `put` and `remove`
-functions provided by the SongLibrary (e.g. `putSong(fileName: String, song: Song)`,
-`getSong(fileName: String): Song`). The `getAll` functions will retrieve a
+The maps can be interacted with by utilizing the `has`, `get`, `getAll`, `put` and `remove`
+functions provided by the SongLibrary. The `getAll` functions will retrieve a
 [persistent map](https://github.com/Kotlin/kotlinx.collections.immutable) of all the data in that
 map from the [library source](#Library-Sources). These functions are often updating/retrieving data
-to/from a remote library source and are not thread-safe. Because of this, all function calls on a
-Song Library should be synchronized.
+to/from a remote library source and are not thread-safe.
 
 ### Filtering songs
 
-may be optimized for the library source
-
-The `getSongsByTags(includeTags, excludeTags)` function will return a map of songs that will include
-songs that contains *all* the tags from the `includeTags` set of tag names and will exclude songs
-that contains *any* of the tags from the `excludeTags` set of tag names. An empty set for
-`includeTags` will include every song, while an empty set for `excludeTags` will exclude no songs.
-Both arguments default to empty sets if you would like to only include one or the other.
+The `getSongsByTags(includeTags, excludeTags)` function will return a map that contains all the
+songs that have *all* the tags from the `includeTags` set and will exclude songs that have *any* of
+the tags from the `excludeTags` set. An empty set for `includeTags` will include every song, while
+an empty set for `excludeTags` will exclude no songs. Both default to empty sets.
 
 This function's implementation is left up to the [library source](#Library-Sources) so that the
-library source can create the most efficient implementation specific to its source.
+library source can determine the most efficient implementation specific to its source.
 
 ### The Data Map
 
 Unlike the other three maps, the `data` map has no direct impact on how songs are organized. The
-purpose of this map is to provide a convenient way of storing additional data for your application
-that you can save to a [library source](#Library-Sources). For instance, if your application has a
-theme setting that you would like to stay synchronized for the user across devices, you can store
-the selected theme in the data map so that each device is able to share the same value. To reduce
-the chance of your application's data conflicting with another, it is recommended to attach a unique
-prefix to the data keys specific to your application.
+purpose of this map is to provide a convenient way of storing additional data for an application
+that can be saved to a [library source](#Library-Sources). For instance, if an application has a
+theme setting that should be synchronized for the user across devices, the setting can be stored in
+the data map so that each device is able to share the same value.
+
+To reduce the chance of data from different applications conflicting with each other, it is
+recommended to attach a unique prefix to the data keys that is specific to the application.
 
 ### Cacheless vs Cached
 
-Depending on the [library source](#Library-Sources) used, updating/retrieving data to/from can be
-slow. Because of this, it may be better to keep a cache of the library data stored in memory to
-minimize the amount of time waiting on a potentially slow remote library source. To achieve this,
-song libraries have two implementations: `CachelessSongLibrary` and `CachedSongLibrary`.
+Depending on the [library source](#Library-Sources) used, updating/retrieving data to/from a library
+source may be a slow process. Because of this, it may be better to keep a cache of the library data
+stored in memory to minimize the amount of time waiting on a potentially slow remote library source.
+To achieve this, song libraries have two implementations: `CachelessSongLibrary` and
+`CachedSongLibrary`.
 
-`CachelessSongLibrary`s do not store any library data in memory and will call whatever
-retrieval/update function of the library source is required for every retrieval/update. This can be
-useful if you know that the library source in use is fast and want to save on memory usage.
+`CachelessSongLibrary`s do not store any library data in memory and will call whichever
+retrieval/update function is required from the library source for every retrieval/update. This can
+be useful if you know that the library source in use is fast and want to save on memory usage.
 
-`CachedSongLibrary`s, on the other hand, will store all four of the maps in memory as well as the
-default tag type. This way when retrieving data about a song library, it is taken from memory
-instead of the library source directly. Likewise, when initially updating a song library's data, the
-cache receives the updates immediately and not the library source. To push any updates made to the
-library source, call the `commit` function to push all the updates together as a batch to the
-library source.
+`CachedSongLibrary`s, on the other hand, will store all four of the song library maps, as well as
+the default tag type, in memory. This way when retrieving data about a song library, it is taken
+from memory instead of the library source. Likewise, when updating a song library's data, the cache
+receives the updates first but not the library source. To push any updates made to the library
+source, the `commit` function has to be called to push all updates since the last commit as a batch
+to the library source.
 
 ## Data Classes
 
@@ -97,11 +94,11 @@ makes them easy to work with in a thread-safe way when stored in
 [persistent collections](https://github.com/Kotlin/kotlinx.collections.immutable).
 
 Because they are persistent, they must be modified through their `mutate(mutator)` functions. These
-functions do not modify the values themselves, but return new instances with the changes made
-applied through the `mutator`. To modify 
+functions do not modify the values themselves, but return new instances with the changes applied
+through the `mutator`.
 
-If you want to modify the songs, tags, or tag types in the song library you
-must remember to use the appropriate `put` function to update them. For example:
+To modify the songs, tags, or tag types in the song library use the appropriate `put` function after
+mutating the data object. For example:
 
 ``` Kotlin
 val mutatedSong = songLibrary.songs["song.mp3"].mutate { this.tags += "A" }
@@ -123,17 +120,17 @@ songLibrary.put("song.mp3", mutatedSong)
 
 The songs' `mutate` function includes an additional optional argument `updateModifyDate` which will
 update the `lastModified` value to `LocalDateTime.now()` if set to true and does so by default. The
-`modifyDate` and `createDate` property cannot be modified directly through the `mutator`.
+`modifyDate` and `createDate` property cannot be modified through the `mutator`.
 
 ### Tags
 
-| Property      | Type      | Default | Description                                    |
-| ------------- | --------- | ------- | ---------------------------------------------- |
-| `type`        | `String?` | null    | Tag type string used to classify this tag      | 
-| `description` | `String?` | null    | Text describing what songs should get this tag |
+| Property      | Type      | Default | Description                                     |
+| ------------- | --------- | ------- | ----------------------------------------------- |
+| `type`        | `String?` | null    | Tag type string used to classify this tag       | 
+| `description` | `String?` | null    | Text describing what songs should have this tag |
 
-A set of tags are used to describe a song. When `type` is `null`, the song library default tag type
-should be used. 
+A set of tags are used to describe a song. When `type` is `null`, the
+[song library](#Song-Libraries) default tag type should be used. 
 
 ### Tag Types
 
@@ -146,10 +143,10 @@ Tag types are used to group similar tags together.
 ## Library Sources
 
 To sync [song library](#Song-Libraries) data across multiple applications or devices, library
-sources are used. A song library will retrieve data and update the library source provided to it
-[when it is required to do so](#Cacheless-vs-Cached) so that, next time a user loads their library,
-the data remains consistent. New library sources can be created by implementing the `LibrarySource`
-interface, but some are provided by Tagged Music already.
+sources are used. A song library will update/retrieve data to/from the library source provided to it
+[when it is required to do so](#Cacheless-vs-Cached) so that, the next time a user loads their
+library, the data remains consistent. New library sources can be created by implementing the
+`LibrarySource` interface, but some are provided by Tagged Music already.
 
 ### JSON Library Source
 
@@ -181,23 +178,23 @@ For help with configuring the initialization script, run:
 
 ## Audio File Sources
 
-Audio file sources are used to store and retrieve audio files by file name. The key string used in a
-[song library's song map](#Song-Libraries) match the audio file names used in an audio file source.
-New audio file sources can be created by implementing the `AudioFileSource` interface, but some are
-provided by Tagged Music already.
+Audio file sources are used to store and retrieve audio files by file name. To get an audio file for
+a song in a song library, use the key string used in the [song library's song map](#Song-Libraries)
+when requesting a song from an audio file source. New audio file sources can be created by
+implementing the `AudioFileSource` interface, but some are provided by Tagged Music already.
 
 ### Local Audio File Source
 
 The `LocalAudioFileSource` provides an easy way of storing library data from a directory on the
 device. When audio files are pulled, a path to the audio file in that directory is provided. When
-audio files are pushed, the files are copied to that directory. Because the files are only stored
+audio files are pushed, the files are copied into that directory. Because the files are only stored
 locally, it is not possible to use the same local audio file source across different devices.
 
-### Sftp Audio File Source
+### SFTP Audio File Source
 
-The `SftpAudioFileSource` stores audio files in a directory on an SFTP server. A directory on the
-SFTP server is used to push/pull audio files to/from. When pulling audio files, that are downloaded
-locally and remain there until they are deleted manually.
+The `SftpAudioFileSource` stores audio files on an SFTP server. A specified directory on the SFTP
+server is used to push/pull audio files. Pulled audio files are downloaded into a local directory
+and remain there until they are deleted manually.
 
 ### Cached Audio File Source
 
@@ -206,22 +203,24 @@ in a "cached" directory. When having to retrieve an audio file multiple times, i
 cache, it does not have to be downloaded again. When the cache directory exceeds the specified max
 space size, the song that has not been requested for the longest will be deleted.
 
-The cached audio files are stored where ever the nested remote audio file source presents them and
-are not copied into a temporary cache directory. Because of this, *do not use a cached audio file
-source with a local audio file source*. Once the maximum capacity is reached, the audio files stored
-in the local audio file source will start getting deleted.
+The cached audio files are stored wherever the nested remote audio file source presents them and are
+not copied into a temporary cache directory. Because of this, **do not use a cached audio file
+source with a local audio file source**. Once the maximum capacity is reached, the audio files
+stored in the local audio file source will start getting deleted.
 
 ## Future Plans
 
 - Tag synonyms: multiple names for the same tag
-  - For example, "Childish Gambino" and "Donald Glover"
+  - e.g. "Childish Gambino" and "Donald Glover"
 - Tag assumptions: assigning a song a tag automatically gives it another
-  - For example, songs tagged with "house" or "dubstep" should get the "electronic" tag
+  - e.g. songs tagged with "house" or "dubstep" should get the "electronic" tag
 - Tag recommendations: assigning a song with one tag might frequently be paired with another and
   should be recommended
-  - For example, songs tagged with "happy" could get recommended the "summer" tag
+  - e.g. songs tagged with "happy" could get recommended the "summer" tag
 - Additional functionality to tag types
-  - Potentially ordinal tag types?
+  - Ordinal/singleton tag types?
+    - To be able to sort songs on a tag type (e.g. artist) that song can only have one of those tags
+      with that tag type
 - Optimize SQL library source retrievals
 - Choose what to cache in a cached song library
 
