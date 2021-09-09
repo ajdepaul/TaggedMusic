@@ -188,15 +188,28 @@ provided by Tagged Music already.
 
 ### Local Audio File Source
 
-The `LocalAudioFileSource`
+The `LocalAudioFileSource` provides an easy way of storing library data from a directory on the
+device. When audio files are pulled, a path to the audio file in that directory is provided. When
+audio files are pushed, the files are copied to that directory. Because the files are only stored
+locally, it is not possible to use the same local audio file source across different devices.
 
 ### Sftp Audio File Source
 
-The `SftpAudioFileSource`
+The `SftpAudioFileSource` stores audio files in a directory on an SFTP server. A directory on the
+SFTP server is used to push/pull audio files to/from. When pulling audio files, that are downloaded
+locally and remain there until they are deleted manually.
 
 ### Cached Audio File Source
 
-The `CachedAudioFileSource`
+The `CachedAudioFileSource` uses a nested remote audio file source to download songs and stores them
+in a "cached" directory. When having to retrieve an audio file multiple times, if it exists in the
+cache, it does not have to be downloaded again. When the cache directory exceeds the specified max
+space size, the song that has not been requested for the longest will be deleted.
+
+The cached audio files are stored where ever the nested remote audio file source presents them and
+are not copied into a temporary cache directory. Because of this, *do not use a cached audio file
+source with a local audio file source*. Once the maximum capacity is reached, the audio files stored
+in the local audio file source will start getting deleted.
 
 ## Future Plans
 
