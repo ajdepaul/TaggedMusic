@@ -17,7 +17,7 @@ import java.nio.file.Path
  */
 class CachedAudioFileSource(
     private val remoteAudioFileSource: LocalAudioFileSource,
-    /** The maximum amount of space available for storing audio files. */
+    /** The maximum amount of space available for storing audio files in bytes. */
     private val maxSpace: Int
 ) : AudioFileSource {
 
