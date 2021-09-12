@@ -1,6 +1,6 @@
 # Tagged Music
 
-[![GitHub release](https://img.shields.io/github/downloads/ajdepaul/TaggedMusic/v1.0/total)](https://github.com/ajdepaul/TaggedMusic/releases/tag/v1.0)
+[![GitHub release](https://img.shields.io/badge/release-v1.0-informational)](https://github.com/ajdepaul/TaggedMusic/releases/tag/v1.0)
 
 This library provides a large amount of control over a collection of music through the use of tags.
 Tagged Music makes it easy to store a set of audio files in [numerous ways](#Audio-File-Sources),
