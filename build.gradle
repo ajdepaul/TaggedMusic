@@ -27,18 +27,29 @@ dependencies {
     // Use the Kotlin JUnit integration.
     testImplementation 'org.jetbrains.kotlin:kotlin-test-junit'
 
-    // https://mvnrepository.com/artifact/com.google.code.gson/gson TODO check license
+    // https://mvnrepository.com/artifact/com.google.code.gson/gson
     implementation 'com.google.code.gson:gson:2.8.6'
 
-    // https://github.com/Kotlin/kotlinx.collections.immutable TODO check license
+    // https://github.com/Kotlin/kotlinx.collections.immutable
     implementation 'org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.2'
 
-    // https://mvnrepository.com/artifact/mysql/mysql-connector-java TODO check license
+    // https://mvnrepository.com/artifact/mysql/mysql-connector-java
     implementation 'mysql:mysql-connector-java:5.1.49'
 
-    // https://mvnrepository.com/artifact/com.jcraft/jsch TODO check license
+    // https://mvnrepository.com/artifact/com.jcraft/jsch
     implementation group: 'com.jcraft', name: 'jsch', version: '0.1.55'
 
-    // https://mvnrepository.com/artifact/commons-io/commons-io TODO check license
+    // https://mvnrepository.com/artifact/commons-io/commons-io
     implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
+}
+
+// bundles build jar with legal.txt
+task bundleJar() {
+    dependsOn('build')
+    doLast {
+        copy {
+            from "$buildDir/libs/$project.name-${project.version}.jar", "bundle/legal.txt"
+            into "$buildDir/bundle/$project.name-$project.version"
+        }
+    }
 }

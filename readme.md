@@ -27,6 +27,12 @@ Run `./gradlew test` to run tests. Tests for remote sources (e.g. MySQL Library 
 File Source) require a server to test modifications. To run these tests properly, edit the
 `server.properties` files located in the [test resources](src/test/resources/ajdepaul/taggedmusic).
 
+### Related Projects
+
+- [Tagged Music Manager](https://github.com/ajdepaul/TaggedMusicManager)
+- [Tagged Music Desktop](https://github.com/ajdepaul/TaggedMusicDesktop)
+- [Tagged Music Android](https://github.com/ajdepaul/TaggedMusicAndroid)
+
 ## Song Libraries
 
 Song libraries are set up as four maps: 
@@ -215,7 +221,7 @@ stored in the local audio file source will start getting deleted.
 - Tag assumptions: assigning a song a tag automatically gives it another
   - e.g. songs tagged with "house" or "dubstep" should get the "electronic" tag
 - Tag recommendations: assigning a song with one tag might frequently be paired with another and
-  should be recommended
+  should be recommended (both automatically and manually)
   - e.g. songs tagged with "happy" could get recommended the "summer" tag
 - Additional functionality to tag types
   - Ordinal/singleton tag types?
