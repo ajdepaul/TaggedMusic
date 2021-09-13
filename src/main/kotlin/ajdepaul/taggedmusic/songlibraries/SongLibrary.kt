@@ -8,7 +8,9 @@ import ajdepaul.taggedmusic.Song
 import ajdepaul.taggedmusic.Tag
 import ajdepaul.taggedmusic.TagType
 import ajdepaul.taggedmusic.librarysources.LibrarySource
-import kotlinx.collections.immutable.*
+import kotlinx.collections.immutable.PersistentMap
+import kotlinx.collections.immutable.PersistentSet
+import kotlinx.collections.immutable.persistentHashSetOf
 
 /**
  * [SongLibrary]s are represented as three separate maps.
