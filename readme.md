@@ -32,6 +32,7 @@ File Source) require a server to test modifications. To run these tests properly
 - [Tagged Music Manager](https://github.com/ajdepaul/TaggedMusicManager)
 - [Tagged Music Desktop](https://github.com/ajdepaul/TaggedMusicDesktop)
 - [Tagged Music Android](https://github.com/ajdepaul/TaggedMusicAndroid)
+- [Tagged Music Server](https://github.com/ajdepaul/TaggedMusicServer)
 
 ## Song Libraries
 
@@ -229,6 +230,7 @@ stored in the local audio file source will start getting deleted.
       with that tag type
 - Optimize SQL library source retrievals
 - Choose what to cache in a cached song library
+- HTTP audio and file sources
 
 ## Copyright and License
 
