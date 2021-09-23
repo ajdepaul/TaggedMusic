@@ -230,7 +230,7 @@ stored in the local audio file source will start getting deleted.
       with that tag type
 - Optimize SQL library source retrievals
 - Choose what to cache in a cached song library
-- HTTP audio and file sources
+- HTTP library and audio file sources
 
 ## Copyright and License
 
